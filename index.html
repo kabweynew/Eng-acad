@@ -4622,8 +4622,30 @@ function renderLessonStep(){
       ${stepNav(!isFirst, !isLast)}`;
   }
 
+  else if (step.render === 'listen') {
+    const scriptHTML = step.lines.map(l => '<p style="margin:4px 0;">' + (l.w ? '<strong>' + l.w + ':</strong> ' : '') + l.t + '</p>').join('');
+    const qHTML = (step.questions || []).map((qq,qi) => `
+        <div class="quiz-q">
+          <p>${qi+1}. ${qq.q}</p>
+          <div class="quiz-opts">
+            ${qq.opts.map((o,oi) => `<button class="quiz-opt" onclick="answerQuiz(${qi},this,${oi})">${o}</button>`).join('')}
+          </div>
+        </div>`).join('');
+    body = `
+      <div class="step-index">Listening</div>
+      <h3>${step.heading}</h3>
+      <p>${step.intro}</p>
+      <div style="text-align:center;margin:10px 0;">
+        <button class="speak-btn" style="width:auto;border-radius:8px;padding:10px 18px;" onclick="playListen(false)">🔊 Play</button>
+        <button class="speak-btn" style="width:auto;border-radius:8px;padding:10px 18px;margin-left:8px;" onclick="playListen(true)">🐢 Play slowly</button>
+      </div>
+      ${qHTML}
+      <details class="ex-box" style="margin-top:14px;"><summary style="cursor:pointer;font-weight:600;">Show the script (read it after you answer)</summary>${scriptHTML}</details>
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
   else if (step.render === 'result') {
-    const total = lesson.steps.filter(s => s.render==='quiz').reduce((n,s) => n + s.questions.length, 0);
+    const total = lesson.steps.filter(s => s.questions).reduce((n,s) => n + s.questions.length, 0);
     const scorePct = Math.round((lessonState.quizScore/total)*100);
     Progress.set(lessonState.moduleId, { status:'completed', score:scorePct });
     body = `
@@ -4729,6 +4751,288 @@ function render(){
   else if (route.view === 'section') renderSection(route.section);
   else if (route.view === 'lesson') renderLesson(route.moduleId);
   else if (route.view === 'share') renderShare();
+}
+
+/* =========================================================
+   NEW LESSONS — Listening, Speaking, Grammar, Vocabulary, Kitchen
+   Original lessons inspired by the topic and skill sequence of
+   Tactics for Listening, Touchstone and American English File.
+   ========================================================= */
+const _I=(label,heading,html)=>({render:'info',label,tag:'Lesson',heading,html});
+const _V=(label,intro,words)=>({render:'listen-words',label,intro,words});
+const _P=(label,lines)=>({render:'phrases',label,lines:lines.map(t=>sp(t)+' '+t)});
+const _S=(label,lines,playText)=>({render:'sentences',label,lines,playText});
+const _LS=(label,heading,intro,lines,questions)=>({render:'listen',label,heading,intro,lines,questions});
+const _Q=(label,a,b)=>({render:'quiz',label,questions:Array.isArray(a)?a:b});
+const _F=(label,intro,items)=>({render:'fill',label,intro,items});
+const _W=(label,heading,prompt,example)=>({render:'write',label,heading,prompt,example});
+const _Pa=(label,text)=>({render:'passage',label,text});
+const _q=(q,opts,correct)=>({q,opts,correct});
+const _d=(text,after,answer)=>({before:sp(text)+' Listen and type:',after:after||'',answer});
+function _L(id,crumb,icon,title,back,steps,msg){
+  LESSONS[id]={crumb,icon,title,backSection:back,
+    steps:steps.concat([{render:'result',label:'Result',message:msg||'Well done! You completed this lesson.'}])};
+}
+
+/* ---------------- LISTENING ---------------- */
+_L('l-m1','Listening / Lesson 1','🎧','Names, Spelling & Contact Details','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>👂 understand a name when someone spells it;</li><li>📞 write down a phone number and an email address;</li><li>🗣️ ask: <strong>How do you spell that?</strong></li></ul>`),
+ _P('2 · Useful phrases',['What is your name, please?','How do you spell that?','Could you repeat that, please?','Is that right?','Yes, that is right.','It is nice to meet you.']),
+ _I('3 · Letters that sound alike','Be careful with these letters',`<ul class="info-list"><li><strong>A</strong> (ay) · <strong>E</strong> (ee) · <strong>I</strong> (eye)</li><li><strong>B</strong> and <strong>P</strong> · <strong>G</strong> and <strong>J</strong> · <strong>M</strong> and <strong>N</strong></li><li>Two of the same letter: <strong>double</strong> L (L L)</li><li>0 = <strong>zero</strong> or <strong>oh</strong></li></ul>`),
+ _LS('4 · Listening 1 — a name','Listen: registering at a club','Play the conversation. Then answer. You can play it again.',[
+  {w:'A',t:'Good morning. What is your name, please?'},{w:'B',t:'My name is Hodan Warsame.'},{w:'A',t:'How do you spell your first name?'},{w:'B',t:'H, O, D, A, N.'},{w:'A',t:'And your family name?'},{w:'B',t:'Warsame. W, A, R, S, A, M, E.'},{w:'A',t:'Thank you, Hodan. Welcome to the English club.'}],
+  [_q('What is her first name?',['Hodan','Hodam','Odan'],'Hodan'),_q('How do you spell her family name?',['W-A-R-S-A-M-E','W-A-R-S-A-N-E','V-A-R-S-A-M-E'],'W-A-R-S-A-M-E'),_q('Where is she?',['At an English club','At a bank','In a shop'],'At an English club')]),
+ _LS('5 · Listening 2 — phone and email','Listen: contact details','Write the numbers in your notebook while you listen.',[
+  {w:'A',t:'Can I have your phone number, please?'},{w:'B',t:'Yes. It is seven seven, one two, three four, five six.'},{w:'A',t:'Seven seven, one two, three four, five six. Is that right?'},{w:'B',t:'Yes, that is right.'},{w:'A',t:'And your email address?'},{w:'B',t:'It is ali, dot, mohamed, at mail, dot com.'},{w:'A',t:'Ali dot Mohamed, at mail dot com. Thank you.'}],
+  [_q('What is the phone number?',['77 12 34 56','77 12 34 65','77 21 34 56'],'77 12 34 56'),_q('What is the email address?',['ali.mohamed@mail.com','ali.mohamed@mail.org','alim.mohamed@mail.com'],'ali.mohamed@mail.com')]),
+ _F('6 · Dictation','Press 🔊, listen, and type what you hear (small letters, no full stop).',[
+  _d('My name is Ayan.','', 'ayan'),
+  _d('Spell it: B, E, T, H.','','beth'),
+  _d('My phone number is seven seven, two zero, four five, nine nine.','','77204599|77 20 45 99'),
+  _d('The email is sara at mail dot com.','','sara@mail.com')]),
+ _W('7 · Your turn','Write your details','Write your name (and spell it), your phone number and your email address.','My name is Amina. A-M-I-N-A. My phone number is 77 00 11 22.')
+],'Excellent! You can now catch names and numbers when people spell them.');
+
+_L('l-m2','Listening / Lesson 2','🎧','Describing People','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>👂 understand age, height and hair when someone describes a person;</li><li>🔎 find the right person from a description.</li></ul>`),
+ _V('2 · Vocabulary','Listen and repeat.',['tall','short','young','old','curly','straight','long','blond','brown','black','glasses','beard']),
+ _I('3 · Key patterns','How we describe people',`<ul class="info-list"><li>Age: <strong>He is ten.</strong> / <strong>She is about forty.</strong></li><li>Height: <strong>tall</strong>, <strong>short</strong>, <strong>average height</strong></li><li>Hair: <strong>She has long, straight black hair.</strong></li><li>Question: <strong>What does he look like?</strong></li></ul>`),
+ _LS('4 · Listening 1','Listen: a missing brother','Play the conversation and answer.',[
+  {w:'A',t:'Excuse me. I am looking for my little brother.'},{w:'B',t:'What does he look like?'},{w:'A',t:'He is ten years old. He is short, and he has short, curly black hair.'},{w:'B',t:'What is he wearing?'},{w:'A',t:'A green T-shirt and blue shorts.'},{w:'B',t:'I see him! He is by the gate.'}],
+  [_q('How old is the brother?',['Ten','Twelve','Seven'],'Ten'),_q('What is his hair like?',['Short and curly','Long and straight','Short and straight'],'Short and curly'),_q('What is he wearing?',['A green T-shirt and blue shorts','A blue T-shirt and green shorts','A red shirt and black trousers'],'A green T-shirt and blue shorts'),_q('Where is he?',['By the gate','In the classroom','At the shop'],'By the gate')]),
+ _LS('5 · Listening 2','Listen: my English teacher','Play the description and answer.',[
+  {t:'My English teacher is Mrs. Amina. She is about forty years old. She is tall and slim. She has long, black hair and she wears glasses. She is very kind, and she is also funny. We all like her classes.'}],
+  [_q('How old is Mrs. Amina?',['About forty','About thirty','About fifty'],'About forty'),_q('What is her hair like?',['Long and black','Short and brown','Long and blond'],'Long and black'),_q('Does she wear glasses?',['Yes, she does','No, she does not'],'Yes, she does'),_q('What is she like?',['Kind and funny','Serious and shy','Lazy and quiet'],'Kind and funny')]),
+ _F('6 · Dictation','Press 🔊, listen, and type what you hear (small letters, no full stop).',[
+  _d('He is tall.','','he is tall'),_d('She has curly hair.','','she has curly hair'),_d('My brother is twelve.','','my brother is twelve')]),
+ _W('7 · Your turn','Describe a friend','Write 3 sentences: age, height, hair.','My friend Omar is sixteen. He is tall. He has short black hair.')
+],'Great work! You can understand how people describe others.');
+
+_L('l-m3','Listening / Lesson 3','🎧','Clothes & Colours','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>👕 understand what people are wearing;</li><li>🛍️ follow a short shop conversation about size.</li></ul>`),
+ _V('2 · Vocabulary','Listen and repeat.',['shirt','trousers','dress','skirt','jacket','shoes','sandals','scarf','hat','belt','size','try on']),
+ _LS('3 · Listening 1','Listen: who is Fatouma?','Play the conversation and answer.',[
+  {w:'A',t:'Which one is Fatouma?'},{w:'B',t:'She is the girl in the long red dress.'},{w:'A',t:'The one with the white scarf?'},{w:'B',t:'Yes, that is her. And her brother Omar is next to her.'},{w:'A',t:'Is he wearing a jacket?'},{w:'B',t:'No. He is wearing grey trousers, a white shirt and black shoes.'}],
+  [_q('What is Fatouma wearing?',['A long red dress and a white scarf','A short blue skirt and a hat','A white dress and a red scarf'],'A long red dress and a white scarf'),_q('Is Omar wearing a jacket?',['No','Yes'],'No'),_q('What colour are Omar\'s trousers?',['Grey','Black','White'],'Grey')]),
+ _LS('4 · Listening 2','Listen: in the clothes shop','Play the conversation and answer.',[
+  {w:'A',t:'Can I help you?'},{w:'B',t:'Yes, please. I like these trousers, but they are too small.'},{w:'A',t:'Let me find a bigger pair. What size are you?'},{w:'B',t:'I think I am a size forty-two.'},{w:'A',t:'Here you are. You can try them on over there.'},{w:'B',t:'Thank you. Oh, they are perfect!'}],
+  [_q('What is the problem with the first trousers?',['They are too small','They are too long','They are too dark'],'They are too small'),_q('What size does he think he is?',['Forty-two','Forty','Thirty-two'],'Forty-two'),_q('How are the new trousers?',['Perfect','Too big','Too short'],'Perfect')]),
+ _F('5 · Dictation','Press 🔊, listen, and type what you hear (small letters, no full stop).',[
+  _d('I am wearing a blue shirt.','','i am wearing a blue shirt'),_d('She has a black jacket.','','she has a black jacket'),_d('These shoes are too big.','','these shoes are too big')]),
+ _W('6 · Your turn','What are you wearing?','Write 3 sentences about your clothes today.','I am wearing a white shirt, black trousers and brown shoes.')
+],'Well done! You can follow clothes descriptions and shop talk.');
+
+_L('l-m4','Listening / Lesson 4','🎧','Time & Daily Routine','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>⏰ understand times of the day;</li><li>🌅 follow a short talk about a daily routine;</li><li>🔢 hear the difference between <strong>thirteen</strong> and <strong>thirty</strong>.</li></ul>`),
+ _I('2 · Saying the time','Two ways to say the same time',`<ul class="info-list"><li>7:15 = <strong>seven fifteen</strong> = <strong>a quarter past seven</strong></li><li>7:30 = <strong>seven thirty</strong> = <strong>half past seven</strong></li><li>7:45 = <strong>seven forty-five</strong> = <strong>a quarter to eight</strong></li><li>Stress: thir<strong>TEEN</strong> (13) but <strong>THIR</strong>ty (30).</li></ul>`),
+ _LS('3 · Listening 1','Listen: what time is it?','Play the three short conversations and answer.',[
+  {w:'A',t:'Excuse me, what time is it?'},{w:'B',t:'It is a quarter past ten.'},{w:'A',t:'Thank you. And what time does the class start?'},{w:'B',t:'At half past eleven.'},{w:'A',t:'Oh no! I am late. I have to be at the bank at a quarter to twelve.'},{w:'B',t:'Then you must hurry.'}],
+  [_q('What time is it now?',['10:15','10:45','11:15'],'10:15'),_q('When does the class start?',['11:30','11:15','11:45'],'11:30'),_q('When must he be at the bank?',['11:45','12:15','11:15'],'11:45')]),
+ _LS('4 · Listening 2','Listen: Ahmed\'s day','Play the talk and answer.',[
+  {t:'I am Ahmed and I am a student. I get up at six o\'clock. I have breakfast at half past six. I walk to school and I arrive at a quarter to eight. Classes start at eight and finish at one o\'clock. After lunch I do my homework. In the evening I play football with my friends. I go to bed at ten o\'clock.'}],
+  [_q('When does Ahmed get up?',['At six o\'clock','At seven o\'clock','At five o\'clock'],'At six o\'clock'),_q('When do classes start?',['At eight','At nine','At seven forty-five'],'At eight'),_q('What does he do in the evening?',['Plays football','Studies English','Watches TV'],'Plays football'),_q('When does he go to bed?',['At ten o\'clock','At eleven o\'clock','At nine o\'clock'],'At ten o\'clock')]),
+ _F('5 · Dictation','Press 🔊, listen, and type what you hear (small letters, no full stop).',[
+  _d('I am thirteen.','','i am thirteen'),_d('The bus is at six thirty.','','the bus is at six thirty'),_d('She gets up at a quarter to seven.','','she gets up at a quarter to seven')]),
+ _W('6 · Your turn','Your day','Write 3 sentences about your day with times.','I get up at six. I go to school at seven. I go to bed at ten.')
+],'Great! You can now follow times and daily routines.');
+
+_L('l-m5','Listening / Lesson 5','🎧','Prices, Money & Change','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>💰 understand prices in francs;</li><li>🧮 follow a total and the change in a shop.</li></ul>`),
+ _P('2 · Useful phrases',['How much is this?','It is on sale.','That comes to one thousand four hundred francs.','Here is your change.','I will take it.','That is too expensive.']),
+ _LS('3 · Listening 1','Listen: at the grocery shop','Play the conversation and answer.',[
+  {w:'A',t:'Good morning. How much is the rice?'},{w:'B',t:'It is eight hundred francs.'},{w:'A',t:'And the cooking oil?'},{w:'B',t:'Six hundred francs.'},{w:'A',t:'I will take both, please.'},{w:'B',t:'That comes to one thousand four hundred francs.'},{w:'A',t:'Here are two thousand francs.'},{w:'B',t:'Thank you. Here is your change: six hundred francs.'}],
+  [_q('How much is the rice?',['800 francs','600 francs','1,400 francs'],'800 francs'),_q('What is the total?',['1,400 francs','1,200 francs','2,000 francs'],'1,400 francs'),_q('How much change does she get?',['600 francs','400 francs','800 francs'],'600 francs')]),
+ _LS('4 · Listening 2','Listen: a bargain?','Play the conversation and answer.',[
+  {w:'A',t:'How much is this bag?'},{w:'B',t:'It is three thousand francs. But today it is on sale. It is two thousand five hundred.'},{w:'A',t:'Hmm. That is still too expensive for me.'},{w:'B',t:'This small one is only one thousand francs.'},{w:'A',t:'That is nice. I will take it.'}],
+  [_q('What is the sale price of the big bag?',['2,500 francs','3,000 francs','1,000 francs'],'2,500 francs'),_q('What does the customer buy?',['The small bag','The big bag','Nothing'],'The small bag')]),
+ _F('5 · Dictation','Press 🔊, listen, and type the price in numbers only.',[
+  _d('The bread is one hundred and fifty francs.','','150'),_d('The shirt is two thousand francs.','','2000|2,000'),_d('The phone is fifteen thousand francs.','','15000|15,000')]),
+ _W('6 · Your turn','At the shop','Write a short conversation: ask the price, then say you will take it.','How much is this? It is five hundred francs. I will take it.')
+],'Well done! You can follow prices, totals and change.');
+
+_L('l-m6','Listening / Lesson 6','🎧','Directions','listening',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🧭 understand simple directions;</li><li>🏦 find a place from what you hear.</li></ul>`),
+ _P('2 · Key phrases',['Go straight for two blocks.','Turn left at the light.','Turn right on Main Street.','It is next to the pharmacy.','It is on the corner.','You can not miss it.']),
+ _LS('3 · Listening 1','Listen: where is the bank?','Play the conversation and answer.',[
+  {w:'A',t:'Excuse me. Is there a bank near here?'},{w:'B',t:'Yes. Go straight for two blocks, then turn left.'},{w:'A',t:'Two blocks, then left?'},{w:'B',t:'That is right. The bank is on your right, next to the pharmacy.'},{w:'A',t:'Thank you very much.'}],
+  [_q('How far must he go straight?',['Two blocks','One block','Three blocks'],'Two blocks'),_q('Then he turns…',['Left','Right'],'Left'),_q('The bank is next to…',['The pharmacy','The school','The hotel'],'The pharmacy')]),
+ _LS('4 · Listening 2','Listen: to the market','Play the directions and answer.',[
+  {w:'A',t:'Can you tell me how to get to the market?'},{w:'B',t:'Of course. Walk up Third Street and turn right at the light.'},{w:'A',t:'Turn right at the light.'},{w:'B',t:'Then go straight for one block. The market is on the corner, on your left.'},{w:'A',t:'Thank you!'}],
+  [_q('Where does he turn right?',['At the light','At the school','At the bank'],'At the light'),_q('After the turn, how far does he go?',['One block','Two blocks'],'One block'),_q('Where is the market?',['On the corner, on the left','Next to the bank','On the right, far away'],'On the corner, on the left')]),
+ _F('5 · Complete the directions','Type the missing word.',[
+  {before:'Go',after:'for two blocks.',answer:'straight'},{before:'Turn',after:'at the light.',answer:'left|right'},{before:'The bank is',after:'to the pharmacy.',answer:'next'}]),
+ _W('6 · Your turn','Give directions','Write directions from your school to the market.','Go straight for two blocks. Turn left. The market is on the right.')
+],'Excellent! You can follow simple directions.');
+
+/* ---------------- SPEAKING ---------------- */
+_L('s-m1','Speaking / Lesson 1','🗣️','Greetings & Introductions','speaking',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>👋 greet someone and say goodbye;</li><li>🙋 introduce yourself and a friend;</li><li>🗣️ ask and answer: <strong>How are you?</strong></li></ul>`),
+ _P('2 · Say it aloud',['Hello! How are you?','I am fine, thank you. And you?','My name is Ali.','Nice to meet you.','This is my friend Omar.','Goodbye! See you tomorrow.']),
+ _Pa('3 · Model dialogue','Ali: Hello! My name is Ali. What is your name?\nHodan: Hi, Ali. I am Hodan. Nice to meet you.\nAli: Nice to meet you, too. This is my friend Omar.\nHodan: Hello, Omar. How are you?\nOmar: I am fine, thank you. And you?\nHodan: I am fine, too. See you tomorrow!'),
+ _Q('4 · Check','Choose the best answer',[
+  _q('Someone says: "How are you?" You say…',['I am fine, thank you.','My name is Ali.','Goodbye.'],'I am fine, thank you.'),
+  _q('Someone says: "Nice to meet you." You say…',['Nice to meet you, too.','Yes, I am fine.','I am twelve.'],'Nice to meet you, too.'),
+  _q('You want to introduce a friend. You say…',['This is my friend Omar.','I am my friend Omar.','Omar is nice meet.'],'This is my friend Omar.')]),
+ _W('5 · Your turn — speak and write','Introduce yourself','Write 4 sentences: your name, how you are, and introduce a friend. Then say them aloud.','Hello! My name is Amina. I am fine, thank you. This is my friend Ayan. Nice to meet you!')
+],'Great speaking practice! Say these lines aloud every day.');
+
+_L('s-m2','Speaking / Lesson 2','🗣️','Talking About Your Day & Free Time','speaking',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🕒 say what you do every day;</li><li>⚽ say how often you do things;</li><li>❓ ask a friend the same questions.</li></ul>`),
+ _I('2 · How often?','Frequency words',`<ul class="info-list"><li><strong>always</strong> (100%) · <strong>usually</strong> · <strong>often</strong> · <strong>sometimes</strong> · <strong>never</strong> (0%)</li><li>I <strong>usually</strong> get up at six.</li><li>Other ways: <strong>every day</strong>, <strong>once a week</strong>, <strong>twice a week</strong></li></ul>`),
+ _P('3 · Say it aloud',['What do you do on weekends?','I usually play football with my friends.','How often do you study English?','I study English twice a week.','Do you like sports?','Yes, I do. / No, I do not.']),
+ _Q('4 · Check','Choose the best answer',[
+  _q('"How often do you play football?"',['Twice a week.','At six o\'clock.','Yes, I am.'],'Twice a week.'),
+  _q('"Do you like sports?"',['Yes, I do.','Yes, I like.','Yes, I am.'],'Yes, I do.'),
+  _q('Choose the correct sentence.',['I never watch TV in the morning.','I watch never TV in the morning.','Never I watch TV.'],'I never watch TV in the morning.')]),
+ _F('5 · Complete','Type the missing word.',[{before:'I',after:'get up at six. (almost every day)',answer:'usually'},{before:'How',after:'do you play football?',answer:'often'},{before:'She plays tennis',after:'a week. (2 times)',answer:'twice'}]),
+ _W('6 · Your turn — speak and write','My free time','Write 4 sentences about what you do in your free time and how often. Then say them aloud.','I often play football. I sometimes watch TV. I never play video games.')
+],'Well done! You can talk about your routine and free time.');
+
+_L('s-m3','Speaking / Lesson 3','🗣️','Invitations & Polite Requests','speaking',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🎉 invite someone;</li><li>✅ accept or ❌ politely refuse;</li><li>🙏 ask for things politely with <strong>Can I…?</strong> and <strong>Could you…?</strong></li></ul>`),
+ _P('2 · Say it aloud',['Would you like to come to my party?','Yes, I would love to.','I am sorry, I can not. I have to study.','Maybe some other time.','Can I have some water, please?','Could you help me, please?']),
+ _Pa('3 · Model dialogue','Amina: Would you like to play football on Saturday?\nOmar: I would love to! What time?\nAmina: At four o\'clock.\nOmar: Great. See you then!\n\nAyan: Would you like to go to the cinema on Friday?\nHodan: I am sorry, I can not. I have to help my mother.\nAyan: That is okay. Maybe some other time.'),
+ _Q('4 · Accept or refuse?','Is the answer an acceptance or a refusal?',[
+  _q('"Sure, I would love to!"',['Accept','Refuse'],'Accept'),
+  _q('"I am sorry, I have to work."',['Refuse','Accept'],'Refuse'),
+  _q('"That sounds great. What time?"',['Accept','Refuse'],'Accept'),
+  _q('Which request is more polite?',['Could you help me, please?','Help me.','You help me now.'],'Could you help me, please?')]),
+ _W('5 · Your turn — speak and write','Invite a friend','Write an invitation and the answer (one accept, one refuse). Then say both aloud.','Would you like to come to my house on Sunday? — I would love to! / I am sorry, I can not. I have an exam.')
+],'Great! You can invite, accept, refuse and ask politely.');
+
+/* ---------------- GRAMMAR ---------------- */
+_L('g-m1','Grammar / Module 1','📚','Be: am / is / are','grammar',[
+ _I('1 · The rule','Which form of "be"?',`<ul class="info-list"><li><strong>I am</strong> a student. (I'm)</li><li><strong>He / She / It is</strong> tall. (He's)</li><li><strong>You / We / They are</strong> friends. (They're)</li><li>Negative: <strong>I am not</strong> · <strong>He is not (isn't)</strong> · <strong>They are not (aren't)</strong></li><li>Question: <strong>Are you</strong> a student? <strong>Is she</strong> tall?</li></ul>`),
+ _S('2 · Read aloud',['I am a student.','She is my sister.','We are in class.','Is he a teacher? No, he is not.'],'I am a student. She is my sister. We are in class. Is he a teacher? No, he is not.'),
+ _F('3 · Practice','Type am, is or are.',[{before:'I',after:'fifteen years old.',answer:'am'},{before:'My brother',after:'tall.',answer:'is'},{before:'They',after:'in the kitchen.',answer:'are'},{before:'Hodan and I',after:'friends.',answer:'are'},{before:'It',after:'a big city.',answer:'is'}]),
+ _Q('4 · Mini-test','Choose the correct sentence',[
+  _q('Choose the correct sentence.',['She is a nurse.','She am a nurse.','She are a nurse.'],'She is a nurse.'),
+  _q('Choose the correct question.',['Are you ready?','Is you ready?','Am you ready?'],'Are you ready?'),
+  _q('Choose the correct negative.',['They are not here.','They is not here.','They not are here.'],'They are not here.')]),
+ _W('5 · Your turn','Write about yourself and a friend','Write 4 sentences with am / is / are.','I am sixteen. My friend is tall. We are in the same class.')
+],'Well done! "Be" is the most important verb in English.');
+
+_L('g-m2','Grammar / Module 2','📚','Present Simple: Daily Routines','grammar',[
+ _I('1 · The rule','Use the present simple for habits and routines',`<ul class="info-list"><li>I / you / we / they: <strong>get up</strong>, <strong>work</strong></li><li>He / she / it: add <strong>-s</strong> → <strong>gets up</strong>, <strong>works</strong></li><li>Negative: <strong>I do not</strong> work · <strong>He does not</strong> work</li><li>Question: <strong>Do you</strong> work? <strong>Does she</strong> work?</li></ul>`),
+ _S('2 · Read aloud',['I get up at six.','She goes to school by bus.','He does not drink coffee.','Do you play football? Yes, I do.'],'I get up at six. She goes to school by bus. He does not drink coffee. Do you play football? Yes, I do.'),
+ _F('3 · Practice','Write the correct form of the verb in brackets.',[{before:'He',after:'(play) football on Fridays.',answer:'plays'},{before:'We',after:'(study) English.',answer:'study'},{before:'She',after:'(go) to bed at ten.',answer:'goes'},{before:'I',after:'(not / like) tea.',answer:'do not like|don\'t like'},{before:'',after:'she work here? (Do / Does)',answer:'does'}]),
+ _Q('4 · Mini-test','Choose the correct sentence',[
+  _q('Choose the correct sentence.',['My father works at a bank.','My father work at a bank.','My father working at a bank.'],'My father works at a bank.'),
+  _q('Choose the correct question.',['Does he live here?','Do he live here?','Does he lives here?'],'Does he live here?'),
+  _q('Choose the correct negative.',['She does not eat meat.','She not eats meat.','She do not eat meat.'],'She does not eat meat.')]),
+ _W('5 · Your turn','My routine','Write 4 sentences about your daily routine.','I get up at six. I walk to school. I do my homework at four. I go to bed at ten.')
+],'Great! You can now talk about routines and habits.');
+
+_L('g-m3','Grammar / Module 3','📚','There is / There are & Prepositions of Place','grammar',[
+ _I('1 · The rule','Describe where things are',`<ul class="info-list"><li><strong>There is</strong> a table. (one thing)</li><li><strong>There are</strong> two chairs. (more than one)</li><li><strong>in</strong> · <strong>on</strong> · <strong>under</strong> · <strong>next to</strong> · <strong>behind</strong> · <strong>in front of</strong> · <strong>between</strong></li><li>Question: <strong>Is there</strong> a bank near here? <strong>Are there</strong> any shops?</li></ul>`),
+ _S('2 · Read aloud',['There is a table in the kitchen.','There are two chairs next to the table.','The book is on the desk.','The cat is under the bed.'],'There is a table in the kitchen. There are two chairs next to the table. The book is on the desk. The cat is under the bed.'),
+ _F('3 · Practice','Type the missing word.',[{before:'There',after:'a bed in my room.',answer:'is'},{before:'There',after:'three windows.',answer:'are'},{before:'The bag is',after:'the chair. (on the floor, below)',answer:'under'},{before:'The bank is',after:'the pharmacy. (beside)',answer:'next to'}]),
+ _Q('4 · Mini-test','Choose the correct sentence',[
+  _q('Choose the correct sentence.',['There are four rooms.','There is four rooms.','There are a room.'],'There are four rooms.'),
+  _q('The lamp is on the table. Where is the lamp?',['On the table','Under the table','Behind the table'],'On the table'),
+  _q('Choose the correct question.',['Is there a market near here?','Are there a market near here?','There is a market near here?'],'Is there a market near here?')]),
+ _W('5 · Your turn','Describe your room','Write 4 sentences about your room with there is / there are.','There is a bed in my room. There are two windows. The lamp is next to the bed.')
+],'Well done! You can describe a place and where things are.');
+
+/* ---------------- VOCABULARY ---------------- */
+_L('v-m1','Vocabulary / Module 1','🧠','Family','vocabulary',[
+ _V('1 · Words — close family','Listen and repeat.',['mother','father','brother','sister','son','daughter','husband','wife']),
+ _V('2 · Words — extended family','Listen and repeat.',['grandmother','grandfather','uncle','aunt','cousin','nephew','niece','twins']),
+ _Pa('3 · Read','My name is Ayan. I have a big family. My father is a driver and my mother is a nurse. I have two brothers and one sister. My grandmother lives with us. My uncle and aunt live near our house, and my cousins visit us on Fridays.'),
+ _Q('4 · Check','Choose the correct answer',[
+  _q('Your mother\'s sister is your…',['aunt','cousin','niece'],'aunt'),
+  _q('Your uncle\'s son is your…',['cousin','nephew','brother'],'cousin'),
+  _q('How many brothers does Ayan have?',['Two','One','Three'],'Two'),
+  _q('Who lives with Ayan?',['Her grandmother','Her uncle','Her cousins'],'Her grandmother')]),
+ _F('5 · Complete','Type the missing word.',[{before:'My mother\'s mother is my',after:'.',answer:'grandmother'},{before:'My brother\'s daughter is my',after:'.',answer:'niece'},{before:'Two babies born together are',after:'.',answer:'twins'}]),
+ _W('6 · Your turn','My family','Write 4 sentences about your family.','I have two sisters and one brother. My father is a teacher.')
+],'Well done! Family words are used every day.');
+
+_L('v-m2','Vocabulary / Module 2','🧠','Jobs','vocabulary',[
+ _V('1 · Words','Listen and repeat.',['teacher','doctor','nurse','driver','chef','waiter','police officer','businessperson','electrician','receptionist']),
+ _Q('2 · Who does what?','Choose the correct job',[
+  _q('This person cooks food in a restaurant.',['chef','driver','nurse'],'chef'),
+  _q('This person helps sick people in a hospital.',['nurse','waiter','teacher'],'nurse'),
+  _q('This person brings food to your table.',['waiter','electrician','doctor'],'waiter'),
+  _q('This person works in a school.',['teacher','driver','chef'],'teacher')]),
+ _I('3 · Talking about jobs','Useful patterns',`<ul class="info-list"><li><strong>What do you do?</strong> — I am a waiter. / I work in a restaurant.</li><li><strong>Do you like your job?</strong> — Yes, I love it. / It is tiring but interesting.</li><li>Opinions: <strong>interesting · boring · tiring · well-paid</strong></li></ul>`),
+ _F('4 · Complete','Type the missing word.',[{before:'A',after:'cooks in the kitchen.',answer:'chef'},{before:'A',after:'drives a bus or a taxi.',answer:'driver'},{before:'What do you',after:'?',answer:'do'}]),
+ _W('5 · Your turn','Dream job','Write 3 sentences about a job you want and why.','I want to be a chef. I like cooking. It is an interesting job.')
+],'Great! You can name jobs and talk about work.');
+
+_L('v-m3','Vocabulary / Module 3','🧠','Weather','vocabulary',[
+ _V('1 · Words','Listen and repeat.',['sunny','cloudy','rainy','windy','hot','cold','warm','cool','humid','dry']),
+ _LS('2 · Listen','Listen: the weather forecast','Play the forecast and answer.',[
+  {t:'Here is the weather forecast. In Djibouti it will be very hot and dry today, with a high of forty degrees. In Paris it will be cool and rainy. In London it will be cloudy and windy. In Cairo it will be hot and sunny.'}],
+  [_q('What is the weather in Djibouti?',['Hot and dry','Cool and rainy','Cloudy and windy'],'Hot and dry'),_q('What is the weather in Paris?',['Cool and rainy','Hot and sunny','Cold and snowy'],'Cool and rainy'),_q('Where is it cloudy and windy?',['London','Cairo','Paris'],'London')]),
+ _F('3 · Complete','Type the missing word.',[{before:'It is very',after:'today. I need water. (not cold)',answer:'hot'},{before:'Take an umbrella. It is',after:'.',answer:'rainy'},{before:'What is the weather',after:'?',answer:'like'}]),
+ _W('4 · Your turn','Today\'s weather','Write 3 sentences about the weather today and what you wear.','It is hot and sunny today. I am wearing a light shirt. I drink a lot of water.')
+],'Well done! You can describe the weather.');
+
+/* ---------------- KITCHEN & RESTAURANT ---------------- */
+_L('k-m2','Kitchen / Module 2','🍳','Ordering & Requests','kitchen-english',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🍽️ take an order politely as a waiter;</li><li>🙋 order food and drink as a customer;</li><li>🥗 understand special requests and problems.</li></ul>`),
+ _P('2 · Waiter phrases',['Are you ready to order?','What would you like to drink?','Would you like dessert?','Anything else?','Here is your order. Enjoy your meal!']),
+ _P('3 · Customer phrases',['I would like the chicken, please.','Could I have some water, please?','Is it spicy?','No onions, please.','Could we have the bill, please?']),
+ _LS('4 · Listening','Listen: ordering lunch','Play the conversation and answer.',[
+  {w:'A',t:'Good afternoon. Are you ready to order?'},{w:'B',t:'Yes. I would like the grilled fish, please.'},{w:'A',t:'Would you like rice or vegetables with it?'},{w:'B',t:'Vegetables, please. And no onions.'},{w:'A',t:'Anything to drink?'},{w:'B',t:'Orange juice, please.'},{w:'A',t:'Would you like dessert?'},{w:'B',t:'Not today, thank you.'}],
+  [_q('What does the customer order?',['Grilled fish','Chicken','Spaghetti'],'Grilled fish'),_q('What does he want with it?',['Vegetables','Rice','Salad'],'Vegetables'),_q('What does he NOT want?',['Onions','Salt','Rice'],'Onions'),_q('Does he want dessert?',['No','Yes'],'No')]),
+ _F('5 · Complete','Type the missing word.',[{before:'Are you ready to',after:'?',answer:'order'},{before:'I',after:'like the soup, please.',answer:'would'},{before:'Could we have the',after:', please?',answer:'bill'}]),
+ _W('6 · Your turn','Role play','Write a short waiter–customer dialogue (4 lines).','Waiter: Are you ready to order? Customer: Yes, I would like the chicken, please.')
+],'Great! You can now order and take orders politely.');
+
+_L('k-m3','Kitchen / Module 3','🍳','Numbers, Prices & the Bill','kitchen-english',[
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🔢 say and understand prices;</li><li>🧾 explain a bill and give change.</li></ul>`),
+ _P('2 · Key phrases',['How much is the soup?','The soup is five hundred francs.','That comes to one thousand two hundred francs.','Do you take cash or card?','Here is your change.']),
+ _LS('3 · Listening','Listen: paying the bill','Play the conversation and answer.',[
+  {w:'A',t:'Could we have the bill, please?'},{w:'B',t:'Of course. One soup, five hundred francs. One chicken with rice, one thousand francs. Two juices, four hundred francs. That comes to one thousand nine hundred francs.'},{w:'A',t:'Here is two thousand francs.'},{w:'B',t:'Thank you. Here is your change: one hundred francs.'}],
+  [_q('How much is the chicken with rice?',['1,000 francs','500 francs','400 francs'],'1,000 francs'),_q('What is the total?',['1,900 francs','1,500 francs','2,000 francs'],'1,900 francs'),_q('What is the change?',['100 francs','200 francs','500 francs'],'100 francs')]),
+ _F('4 · Calculate','Type the total as a number. (Soup 500 + Juice 200 = ?)',[{before:'Soup 500 francs + juice 200 francs =',after:'francs',answer:'700'},{before:'Total 1,500 francs. Customer gives 2,000. Change =',after:'francs',answer:'500'}]),
+ _W('5 · Your turn','Write a bill','Write a bill with 3 items and a total.','Rice 800 francs. Juice 200 francs. Salad 300 francs. Total: 1,300 francs.')
+],'Excellent! You can handle prices, totals and change.');
+
+/* ---------------- MODULE LISTS ---------------- */
+MODULES.listening=[
+ {id:'l-m1',title:'Lesson 1 — Names, Spelling & Contact Details',sub:'Letters, phone numbers, email addresses',built:true},
+ {id:'l-m2',title:'Lesson 2 — Describing People',sub:'Age, height, hair, clothes',built:true},
+ {id:'l-m3',title:'Lesson 3 — Clothes & Colours',sub:'What people wear; in the clothes shop',built:true},
+ {id:'l-m4',title:'Lesson 4 — Time & Daily Routine',sub:'Telling the time; a student\'s day',built:true},
+ {id:'l-m5',title:'Lesson 5 — Prices, Money & Change',sub:'Francs, totals and change',built:true},
+ {id:'l-m6',title:'Lesson 6 — Directions',sub:'Go straight, turn left, next to',built:true}];
+MODULES.speaking=[
+ {id:'s-m1',title:'Lesson 1 — Greetings & Introductions',sub:'Hello, how are you, this is my friend',built:true},
+ {id:'s-m2',title:'Lesson 2 — Talking About Your Day & Free Time',sub:'Routines and how often',built:true},
+ {id:'s-m3',title:'Lesson 3 — Invitations & Polite Requests',sub:'Invite, accept, refuse, ask politely',built:true}];
+MODULES.grammar=[
+ {id:'g-m1',title:'Module 1 — Be: am / is / are',sub:'The first verb every learner needs',built:true},
+ {id:'g-m2',title:'Module 2 — Present Simple: Daily Routines',sub:'I work, she works, do / does',built:true},
+ {id:'g-m3',title:'Module 3 — There is / There are & Prepositions of Place',sub:'in, on, under, next to',built:true}];
+MODULES.vocabulary=[
+ {id:'v-m1',title:'Module 1 — Family',sub:'Word → meaning → practice',built:true},
+ {id:'v-m2',title:'Module 2 — Jobs',sub:'Names of jobs and talking about work',built:true},
+ {id:'v-m3',title:'Module 3 — Weather',sub:'Describe the weather',built:true}];
+(MODULES['kitchen-english'].find(m=>m.id==='k-m2')||{}).built=true;
+(MODULES['kitchen-english'].find(m=>m.id==='k-m3')||{}).built=true;
+
+/* ---------------- LISTENING PLAYER ---------------- */
+function playListen(slow){
+  const st = LESSONS[lessonState.moduleId].steps[lessonState.stepIndex];
+  if (!('speechSynthesis' in window) || !st.lines) return;
+  if (!cachedVoices.length) cachedVoices = speechSynthesis.getVoices();
+  const en = cachedVoices.filter(v => /^en[-_]/i.test(v.lang));
+  const v1 = pickBestVoice();
+  const v2 = en.find(v => v !== v1 && v.lang === (v1 && v1.lang)) || en.find(v => v !== v1) || v1;
+  speechSynthesis.cancel();
+  setTimeout(() => {
+    st.lines.forEach(l => {
+      const u = new SpeechSynthesisUtterance(l.t);
+      const voice = l.w === 'B' ? v2 : v1;
+      if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = 'en-US'; }
+      u.rate = slow ? 0.65 : 0.85;
+      u.pitch = (l.w === 'B' && v2 === v1) ? 0.8 : 1;
+      speechSynthesis.speak(u);
+    });
+  }, 80);
 }
 
 Progress.loadFromFirestore().finally(render);

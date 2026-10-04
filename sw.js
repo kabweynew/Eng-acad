@@ -1,5 +1,5 @@
 // English Academy service worker — makes the app installable and usable offline.
-const CACHE = 'english-academy-v2';
+const CACHE = 'english-academy-v3';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   // Cache each file separately so one missing file can never block installation.
