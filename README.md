@@ -12,3 +12,6 @@ Optional: put your recorded voices in an `audio/` folder (names are listed in `A
 2. Inside the app: menu → **📲 Install & Share**. The link and QR code are filled in automatically.
 3. Send the link by WhatsApp / Email / SMS / Telegram, or show/download the QR code.
 4. Anyone who scans it opens the link and taps **Install** (Android) or Share → Add to Home Screen (iPhone).
+
+## Real Android app (APK / Play Store) — optional
+After the app is online, go to https://www.pwabuilder.com, paste your link, and choose **Android**. It generates an installable APK/AAB from the same app.

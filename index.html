@@ -4423,7 +4423,7 @@ function isStandalone(){ return window.matchMedia('(display-mode: standalone)').
 function installBanner(){
   if (isStandalone()) return '';
   return `<div class="install-banner"><div><strong>📲 Install English Academy</strong><br><span>Use it like a normal app, even with a weak connection.</span></div>
-    <button class="nav-btn" onclick="${deferredInstall ? 'installApp()' : "go({view:'share'})"}">${deferredInstall ? 'Install' : 'How to install'}</button></div>`;
+    <button class="nav-btn" onclick="installApp()">Install</button></div>`;
 }
 function renderShare(){
   const url = appUrl();
@@ -4734,5 +4734,77 @@ function render(){
 Progress.loadFromFirestore().finally(render);
 if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
+<style>
+  .ea-modal-back{position:fixed;inset:0;background:rgba(27,42,74,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .ea-modal-back.show{display:flex;}
+  .ea-modal{background:#fff;border-radius:16px;max-width:380px;width:100%;padding:26px 24px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);}
+  .ea-modal img{width:72px;height:72px;border-radius:16px;margin-bottom:10px;}
+  .ea-modal h2{font-family:var(--serif);margin:0 0 8px;font-size:1.35rem;}
+  .ea-modal p{color:var(--ink-soft);margin:0 0 16px;font-size:.95rem;}
+  .ea-modal ol{text-align:left;color:var(--ink);font-size:.95rem;margin:0 0 16px;padding-left:22px;}
+  .ea-modal .row{display:flex;gap:10px;justify-content:center;}
+  .ea-ok{font-size:2.6rem;color:var(--teal);margin-bottom:4px;}
+</style>
+<div class="ea-modal-back" id="eaModalBack"><div class="ea-modal" id="eaModal"></div></div>
+<script>
+(function(){
+  var KEY_DISMISS='ea_install_dismissed', KEY_DONE='ea_installed', KEY_WELCOME='ea_welcome_shown';
+  var dp = null;
+  function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){} return null; }
+  function standalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }
+  function openModal(html){ document.getElementById('eaModal').innerHTML = html; document.getElementById('eaModalBack').classList.add('show'); }
+  window.eaCloseModal = function(remember){ document.getElementById('eaModalBack').classList.remove('show'); if(remember) ls(KEY_DISMISS, String(Date.now())); };
+  var ICON = '<img src="icons/icon-192.png" alt="">';
+
+  function installPrompt(){
+    openModal(ICON+'<h2>Install English Academy</h2><p>Install the app on your phone. It opens like a normal app, with its own icon, full screen, and works with a weak connection.</p><div class="row"><button class="nav-btn secondary" onclick="eaCloseModal(true)">Not now</button><button class="nav-btn" onclick="eaDoInstall()">Install</button></div>');
+  }
+  function iosPrompt(){
+    openModal(ICON+'<h2>Install English Academy</h2><p>On iPhone and iPad, install it from Safari:</p><ol><li>Tap the <strong>Share</strong> button ⬆️</li><li>Tap <strong>Add to Home Screen</strong></li><li>Tap <strong>Add</strong></li></ol><div class="row"><button class="nav-btn" onclick="eaCloseModal(true)">OK</button></div>');
+  }
+  function manualPrompt(){
+    openModal(ICON+'<h2>Install English Academy</h2><p>Open this page in <strong>Chrome</strong> (Android) or <strong>Edge</strong>, then tap ⋮ → <strong>Install app</strong>. The Install button appears automatically when the app is opened from its web address (https).</p><div class="row"><button class="nav-btn" onclick="eaCloseModal(false)">OK</button></div>');
+  }
+  function installedMsg(){
+    ls(KEY_DONE,'1');
+    openModal('<div class="ea-ok">✅</div><h2>Application installed</h2><p>English Academy is now installed. Open it from your home screen or app list.</p><div class="row"><button class="nav-btn" onclick="eaCloseModal(false)">Great</button></div>');
+  }
+
+  window.eaDoInstall = function(){
+    if (!dp) { eaCloseModal(false); return manualPrompt(); }
+    eaCloseModal(false);
+    dp.prompt();
+    dp.userChoice.then(function(c){ if (c.outcome !== 'accepted') ls(KEY_DISMISS, String(Date.now())); dp = null; if (typeof render==='function') render(); });
+  };
+  // Used by the Install & Share page and the home banner
+  window.installApp = function(){
+    if (standalone()) return installedMsgAlready();
+    if (dp) return installPrompt();
+    if (isIOS()) return iosPrompt();
+    manualPrompt();
+  };
+  function installedMsgAlready(){ openModal('<div class="ea-ok">✅</div><h2>Application installed</h2><p>You are already using the installed app.</p><div class="row"><button class="nav-btn" onclick="eaCloseModal(false)">OK</button></div>'); }
+
+  function recentlyDismissed(){ var t = +ls(KEY_DISMISS) || 0; return Date.now() - t < 3*24*3600*1000; }
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); dp = e; window.deferredInstall = e;
+    if (typeof render==='function') render();
+    if (!recentlyDismissed() && !standalone()) setTimeout(installPrompt, 1200);
+  });
+  window.addEventListener('appinstalled', function(){ dp = null; window.deferredInstall = null; installedMsg(); if (typeof render==='function') render(); });
+
+  window.addEventListener('load', function(){
+    if (standalone()) {
+      // First launch of the installed app: confirm it
+      if (!ls(KEY_WELCOME)) { ls(KEY_WELCOME,'1'); installedMsg(); }
+    } else if (isIOS() && !recentlyDismissed()) {
+      setTimeout(iosPrompt, 1500);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
