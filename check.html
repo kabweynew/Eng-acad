@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Install check</title>
+<style>body{font:17px/1.5 system-ui,sans-serif;margin:0;padding:16px;background:#fff;color:#111}h1{font-size:22px}
+.r{padding:10px 12px;margin:8px 0;border-radius:10px;border:1px solid #ccc}.ok{background:#e6f6ea;border-color:#2e9e4f}.bad{background:#fde8e8;border-color:#d33}.wait{background:#fff7e0}
+button{font-size:18px;padding:14px 20px;border-radius:12px;border:0;background:#1B2A4A;color:#fff;margin-top:10px;width:100%}small{color:#555}</style></head><body>
+<h1>English Academy – install check</h1><div id="out"></div>
+<button id="inst" style="display:none">Install now</button>
+<p><small>Send a screenshot of this page.</small></p>
+<script>
+var out=document.getElementById('out');
+function row(t,s,d){var e=document.createElement('div');e.className='r '+s;e.innerHTML=(s=='ok'?'✅ ':s=='bad'?'❌ ':'⏳ ')+'<b>'+t+'</b>'+(d?'<br><small>'+d+'</small>':'');out.appendChild(e);return e}
+var base=location.href.replace(/[^\/]*$/,'');
+row('Address',location.protocol=='https:'?'ok':'bad',base);
+row('Opened in',(window.matchMedia('(display-mode: standalone)').matches)?'ok':'wait',(window.matchMedia('(display-mode: standalone)').matches)?'Already running as an installed app':'Browser tab (normal)');
+row('Browser',/Chrome\//.test(navigator.userAgent)&&!/EdgA|OPR|SamsungBrowser|FB|Instagram/.test(navigator.userAgent)?'ok':'bad',navigator.userAgent.slice(0,90));
+fetch(base+'manifest.webmanifest?'+Date.now(),{cache:'no-store'}).then(function(r){
+  if(!r.ok){row('manifest.webmanifest','bad','Server answered '+r.status);return}
+  return r.json().then(function(m){
+    row('manifest.webmanifest','ok',m.name+' · display='+m.display+' · icons='+m.icons.map(function(i){return i.src}).join(', '));
+    m.icons.forEach(function(i){fetch(base+i.src,{cache:'no-store'}).then(function(r){row('Icon '+i.src,r.ok?'ok':'bad',r.ok?'found':'NOT FOUND ('+r.status+') – manifest points to a file that is not on the site')}).catch(function(){row('Icon '+i.src,'bad','failed')})});
+  })}).catch(function(e){row('manifest.webmanifest','bad',String(e))});
+fetch(base+'sw.js?'+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():Promise.reject('status '+r.status)}).then(function(t){
+  var v=(t.match(/CACHE\s*=\s*'([^']+)'/)||[])[1];row('sw.js file',/v2/.test(v||'')?'ok':'bad','Version: '+v+(/v2/.test(v||'')?'':' – this is the OLD file, upload the new sw.js'))}).catch(function(e){row('sw.js file','bad',String(e))});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register(base+'sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(r){row('Service worker','ok','Active, scope '+r.scope)}).catch(function(e){row('Service worker','bad',String(e))});
+}else row('Service worker','bad','Not supported here');
+var w=row('Install event from Chrome','wait','Waiting up to 10 seconds…'),got=false;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();got=true;w.className='r ok';w.innerHTML='✅ <b>Chrome says: INSTALLABLE</b>';var b=document.getElementById('inst');b.style.display='block';b.onclick=function(){e.prompt()}});
+window.addEventListener('appinstalled',function(){row('Installed','ok','App installed')});
+setTimeout(function(){if(!got){w.className='r bad';w.innerHTML='❌ <b>Chrome has not offered install</b><br><small>See the red items above. If none are red, Chrome may already consider it installed, or you opened this from a chat app instead of Chrome.</small>'}},10000);
+</script></body></html>
