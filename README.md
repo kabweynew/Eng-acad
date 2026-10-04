@@ -1,6 +1,6 @@
 # English Academy — install & share
 
-Files: `index.html` (the app), `manifest.webmanifest`, `sw.js`, `icons/`.
+Files: `index.html` (the app), `manifest.webmanifest`, `sw.js` — all files sit in one folder, no subfolders.
 Optional: put your recorded voices in an `audio/` folder (names are listed in `AUDIO_MAP` inside index.html).
 
 ## Put it online (free, ~2 minutes) — needed for the QR code
