@@ -4644,6 +4644,47 @@ function renderLessonStep(){
       ${stepNav(!isFirst, !isLast)}`;
   }
 
+  else if (step.render === 'arrowcards') {
+    body = `
+      <div class="step-index">Activity 1</div>
+      <h3>${step.heading}</h3>
+      <p>${step.intro}</p>
+      ${arrowsHTML(step)}
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
+  else if (step.render === 'sim') {
+    body = `
+      <div class="step-index">Activity 2</div>
+      <h3>${step.heading}</h3>
+      <p>${step.intro}</p>
+      ${simHTML()}
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
+  else if (step.render === 'routemap') {
+    body = `
+      <div class="step-index">Map</div>
+      <h3>${step.heading}</h3>
+      <p>${step.intro}</p>
+      ${routeHTML()}
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
+  else if (step.render === 'arrows') {
+    body = `
+      <div class="step-index">Arrows</div>
+      <h3>${step.heading}</h3>
+      <p>${step.intro}</p>
+      <div class="word-row">${step.bank.map(w=>`<span class="word-chip" style="padding:6px 12px;font-size:.9rem;">${w}<button class="speak-btn" onclick="speak('${w}')">🔊</button></span>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:14px 0;">
+        ${step.items.map((it,i)=>`<div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;">${dirIcon(it.icon)}<input class="practice-input" id="arr_${i}" style="width:100%;margin-top:6px;" autocomplete="off" autocapitalize="off" placeholder="type here"></div>`).join('')}
+      </div>
+      <button class="check-btn" style="margin-left:0;" onclick="checkArrows()">Check answers</button>
+      <div class="feedback" id="arrFeedback"></div>
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
   else if (step.render === 'result') {
     const total = lesson.steps.filter(s => s.questions).reduce((n,s) => n + s.questions.length, 0);
     const scorePct = Math.round((lessonState.quizScore/total)*100);
@@ -4682,6 +4723,175 @@ function lessonNext(){
 }
 function lessonPrev(){
   if (lessonState.stepIndex > 0) { lessonState.stepIndex--; renderLessonStep(); }
+}
+
+
+/* ---- Directions arrows activity ---- */
+const DIR_ART={
+ straight:'<path d="M40 70V30M26 42l14-16 14 16" />',
+ left:'<path d="M60 70V45H25M38 32L24 45l14 13"/>',
+ right:'<path d="M20 70V45h35M42 32l14 13-14 13"/>',
+ left2:'<path d="M60 70V50H25M38 37L24 50l14 13"/><circle cx="60" cy="22" r="0"/><text x="40" y="20" font-size="14" text-anchor="middle" fill="#1B2A4A" stroke="none">2nd</text>',
+ right2:'<path d="M20 70V50h35M42 37l14 13-14 13"/><text x="40" y="20" font-size="14" text-anchor="middle" fill="#1B2A4A" stroke="none">2nd</text>',
+ left1:'<path d="M60 70V50H25M38 37L24 50l14 13"/><text x="40" y="20" font-size="14" text-anchor="middle" fill="#1B2A4A" stroke="none">1st</text>',
+ right1:'<path d="M20 70V50h35M42 37l14 13-14 13"/><text x="40" y="20" font-size="14" text-anchor="middle" fill="#1B2A4A" stroke="none">1st</text>',
+ past:'<path d="M8 40h58M54 28l14 12-14 12"/><rect x="26" y="52" width="26" height="16" fill="#9aa3b5" stroke="none"/>',
+ roundabout:'<circle cx="40" cy="40" r="14" fill="#7BE86B" stroke="#2F7A6B"/><path d="M40 78V54M40 26V4" stroke="#8fd3e0" stroke-width="12"/>',
+ lights:'<rect x="30" y="8" width="20" height="60" rx="6" fill="#555" stroke="none"/><circle cx="40" cy="22" r="6" fill="#e5533d" stroke="none"/><circle cx="40" cy="38" r="6" fill="#f1c232" stroke="none"/><circle cx="40" cy="54" r="6" fill="#4fbf4f" stroke="none"/>',
+ next:'<rect x="8" y="30" width="26" height="30" fill="#9aa3b5" stroke="none"/><rect x="40" y="30" width="26" height="30" fill="#2F7A6B" stroke="none"/><text x="37" y="22" font-size="12" text-anchor="middle" fill="#1B2A4A" stroke="none">next to</text>',
+ opposite:'<rect x="10" y="8" width="56" height="18" fill="#9aa3b5" stroke="none"/><rect x="0" y="32" width="80" height="14" fill="#cfeff5" stroke="none"/><rect x="10" y="52" width="56" height="18" fill="#2F7A6B" stroke="none"/>'
+};
+function dirIcon(k){return '<svg viewBox="0 0 80 80" width="76" height="76" fill="none" stroke="#E5533D" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">'+DIR_ART[k]+'</svg>';}
+function checkArrows(){
+  const step=LESSONS[lessonState.moduleId].steps[lessonState.stepIndex];
+  let right=0;
+  step.items.forEach((it,i)=>{
+    const el=document.getElementById('arr_'+i);
+    const ok=it.answer.split('|').includes(el.value.trim().toLowerCase().replace(/\s+/g,' '));
+    el.className='practice-input '+(ok?'ok':'bad'); if(ok) right++;
+  });
+  const fb=document.getElementById('arrFeedback');
+  fb.textContent=right===step.items.length?'🎉 All correct!':right+' of '+step.items.length+' correct. Fix the red ones (use the word bank).';
+  fb.className='feedback '+(right===step.items.length?'correct':'wrong');
+}
+
+
+/* ---- Route map (Bond Street) ---- */
+const RB=[ // buildings: name,x,y,w,h
+ ['hospital',80,20,115,100],['police station',205,20,80,100],['supermarket',420,20,180,50],['book shop',420,80,180,40],['bus station',700,40,150,80],
+ ['cinema',80,200,85,130],['theatre',180,200,100,100],['underground station',420,200,160,95],['shop',420,310,120,55],['café',640,200,80,60],['Italian restaurant',735,200,115,70],
+ ['post office',80,480,100,100],['library',190,480,95,60],['',420,480,40,45],['museum',470,480,170,45],['factory',660,480,190,115]];
+const ROUTES=[
+ {dest:'Underground station',hl:[[420,200,160,95],[180,200,100,100]],
+  steps:[{t:'Go straight on.',p:[[350,575],[350,520]]},{t:'Go past the traffic lights.',p:[[350,520],[350,475]]},{t:'Go past Green Street.',p:[[350,475],[350,395]]},{t:'The underground station is on the right, opposite the theatre.',p:[[350,395],[350,300]]}],
+  say:'Go straight on. Go past the traffic lights. Go past Green Street. It is on the right, opposite the theatre.'},
+ {dest:'Café',hl:[[640,200,80,60]],
+  steps:[{t:'Go straight on.',p:[[350,575],[350,520]]},{t:'Go past the traffic lights.',p:[[350,520],[350,475]]},{t:'Take the first right on to Green Street.',p:[[350,475],[350,440],[610,440]]},{t:'Take the first left.',p:[[610,440],[610,300]]},{t:'The café is on the right, next to the Italian restaurant.',p:[[610,300],[610,235]]}],
+  say:'Go straight on. Go past the traffic lights. Take the first right on to Green Street. Then take the first left. It is on the right, next to the Italian restaurant.'},
+ {dest:'Bus station',hl:[[700,40,150,80],[735,200,115,70]],
+  steps:[{t:'Go straight on.',p:[[350,575],[350,520]]},{t:'Go past the traffic lights.',p:[[350,520],[350,475]]},{t:'Take the second right on to King\u2019s Road.',p:[[350,475],[350,160],[450,160]]},{t:'Go straight on.',p:[[450,160],[690,160]]},{t:'The bus station is on the left, opposite the Italian restaurant.',p:[[690,160],[790,160]]}],
+  say:'Go straight on. Go past the traffic lights and take the second right on to King\u2019s Road. Go straight on. It is on the left, opposite the Italian restaurant.'},
+ {dest:'Hospital',hl:[[80,20,115,100],[205,20,80,100]],
+  steps:[{t:'Go straight on.',p:[[350,575],[350,520]]},{t:'Go past the traffic lights.',p:[[350,520],[350,475]]},{t:'Go straight on to the roundabout.',p:[[350,475],[350,248]]},{t:'At the roundabout turn left.',p:[[350,248],[350,160],[260,160]]},{t:'Go straight on. The hospital is on the right, next to the police station.',p:[[260,160],[130,160]]}],
+  say:'Go straight on. Go past the traffic lights. At the roundabout turn left. Go straight on. It is on the right, next to the police station.'}];
+const MOVES=[['go straight on','go past','go past'],['go straight on','go past','take the first right','take the first left'],['go straight on','go past','take the second right','go straight on'],['go straight on','go past','go straight on','turn left','go straight on']];
+ROUTES.forEach((R,i)=>R.steps.forEach((st,j)=>{if(MOVES[i][j])st.m=MOVES[i][j];}));
+const routeState={r:0,s:0};
+function routeBase(){
+  let g='<rect x="0" y="0" width="800" height="640" rx="14" fill="#8fe07a"/>';
+  RB.forEach(b=>{g+='<rect x="'+b[1]+'" y="'+b[2]+'" width="'+b[3]+'" height="'+b[4]+'" fill="#d0d0d0"/>';if(b[0])g+='<text x="'+(b[1]+b[3]/2)+'" y="'+(b[2]+b[4]/2+5)+'" font-size="'+(b[3]<100?13:16)+'" text-anchor="middle" fill="#1B3A8A">'+b[0]+'</text>';});
+  g+='<rect x="80" y="130" width="770" height="60" fill="#fff"/><rect x="80" y="410" width="770" height="60" fill="#fff"/><rect x="590" y="190" width="40" height="220" fill="#fff"/>';
+  g+='<rect x="290" y="0" width="120" height="640" fill="#cfeff5"/><circle cx="350" cy="160" r="85" fill="#cfeff5"/><circle cx="350" cy="160" r="28" fill="#8fe07a"/>';
+  g+='<text x="520" y="168" font-size="17" font-style="italic" font-weight="700" fill="#444" text-anchor="middle">King\u2019s Road</text><text x="150" y="168" font-size="17" font-style="italic" font-weight="700" fill="#444" text-anchor="middle">King\u2019s Road</text>';
+  g+='<text x="520" y="448" font-size="17" font-style="italic" font-weight="700" fill="#444" text-anchor="middle">Green Street</text><text x="150" y="448" font-size="17" font-style="italic" font-weight="700" fill="#444" text-anchor="middle">Green Street</text>';
+  g+='<text transform="translate(332,330) rotate(-90)" font-size="17" font-style="italic" font-weight="700" fill="#444" text-anchor="middle">Bond Street</text>';
+  [[298,482],[388,482]].forEach(t=>{g+='<rect x="'+t[0]+'" y="'+t[1]+'" width="14" height="32" rx="4" fill="#555"/><circle cx="'+(t[0]+7)+'" cy="'+(t[1]+8)+'" r="4" fill="#e5533d"/><circle cx="'+(t[0]+7)+'" cy="'+(t[1]+16)+'" r="4" fill="#f1c232"/><circle cx="'+(t[0]+7)+'" cy="'+(t[1]+24)+'" r="4" fill="#4fbf4f"/>';});
+  g+='<text x="350" y="592" font-size="34" text-anchor="middle" fill="#E5533D" font-weight="700">\u2716</text><rect x="425" y="545" width="150" height="30" rx="8" fill="#ffe14d" stroke="#555"/><text x="500" y="566" font-size="15" font-weight="700" text-anchor="middle" fill="#222">YOU ARE HERE</text>';
+  return g;
+}
+function routeSVG(r,s){
+  const R=ROUTES[r];let g=routeBase();
+  const pts=a=>a.map(q=>q.join(',')).join(' ');
+  for(let i=0;i<s;i++)g+='<polyline points="'+pts(R.steps[i].p)+'" fill="none" stroke="#E5533D" stroke-opacity=".35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>';
+  if(s===R.steps.length-1)R.hl.forEach(h=>{g+='<rect x="'+(h[0]-3)+'" y="'+(h[1]-3)+'" width="'+(h[2]+6)+'" height="'+(h[3]+6)+'" fill="none" stroke="#E8A33D" stroke-width="6" rx="4"/>';});
+  const cur=R.steps[s].p,last=cur[cur.length-1],prev=cur[cur.length-2];
+  g+='<polyline points="'+pts(cur)+'" fill="none" stroke="#E5533D" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>';
+  const ang=Math.atan2(last[1]-prev[1],last[0]-prev[0])*180/Math.PI;
+  g+='<polygon points="-18,-18 18,0 -18,18" fill="#E5533D" transform="translate('+last[0]+','+last[1]+') rotate('+ang+')"/>';
+  g+='<circle cx="'+cur[0][0]+'" cy="'+cur[0][1]+'" r="17" fill="#1B2A4A"/><text x="'+cur[0][0]+'" y="'+(cur[0][1]+6)+'" font-size="18" font-weight="700" text-anchor="middle" fill="#fff">'+(s+1)+'</text>';
+  return '<svg viewBox="0 0 800 640" style="width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:14px;">'+g+'</svg>';
+}
+function routeHTML(){
+  const R=ROUTES[routeState.r],s=routeState.s,n=R.steps.length;
+  const tabs=ROUTES.map((x,i)=>'<button class="quiz-opt'+(i===routeState.r?' selected-correct':'')+'" style="padding:7px 12px;font-size:.85rem;" onclick="routeGo('+i+',0)">'+x.dest+'</button>').join('');
+  return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+tabs+'</div>'+routeSVG(routeState.r,s)+
+   '<div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;padding:12px 14px;margin:12px 0;"><div style="font-size:.78rem;color:var(--ink-soft);">Step '+(s+1)+' of '+n+'</div><div style="font-family:var(--serif);font-size:1.25rem;font-weight:600;">'+R.steps[s].t+' <button class="speak-btn" onclick="speak(ROUTES['+routeState.r+'].steps['+s+'].t)">\uD83D\uDD0A</button></div></div>'+
+   '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="nav-btn secondary" '+(s===0?'disabled':'')+' onclick="routeGo('+routeState.r+','+(s-1)+')">\u25C0 Back</button><button class="nav-btn" '+(s===n-1?'disabled':'')+' onclick="routeGo('+routeState.r+','+(s+1)+')">Next step \u25B6</button><button class="nav-btn secondary" onclick="speak(ROUTES['+routeState.r+'].say)">\uD83D\uDD0A Hear the whole route</button></div>';
+}
+function routeGo(r,s){routeState.r=r;routeState.s=s;renderLessonStep();}
+
+/* ---- Activity 1: arrows one by one ---- */
+const arrowState={i:0,score:0,fb:'',ok:true,hint:0,tried:false,solved:false,done:false};
+function dNorm(x){return String(x||'').toLowerCase().replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim();}
+function arrowStep(){return LESSONS[lessonState.moduleId].steps[lessonState.stepIndex];}
+function arrowsReset(){Object.assign(arrowState,{i:0,score:0,fb:'',ok:true,hint:0,tried:false,solved:false,done:false});renderLessonStep();}
+function arrowsCheck(){
+  const a=arrowState,it=arrowStep().items[a.i],v=document.getElementById('acIn').value;
+  if(!v.trim()){a.fb='Type an answer first.';a.ok=false;}
+  else if(dNorm(v)===dNorm(it.answer)){if(!a.tried&&!a.hint)a.score++;a.fb='Correct!';a.ok=true;a.solved=true;}
+  else{a.tried=true;a.fb='Not quite. Try again or press Hint.';a.ok=false;}
+  renderLessonStep();
+}
+function arrowsHint(){const a=arrowState;a.hint=Math.min(2,a.hint+1);const ans=arrowStep().items[a.i].answer;
+  a.fb=a.hint===1?'Hint: '+ans.split(' ').map(w=>w[0]+'_'.repeat(w.length-1)).join(' '):'Answer: '+ans;a.ok=true;renderLessonStep();}
+function arrowsNext(){const a=arrowState;a.i++;a.fb='';a.hint=0;a.tried=false;a.solved=false;if(a.i>=arrowStep().items.length)a.done=true;renderLessonStep();}
+function arrowsHTML(step){
+  const a=arrowState,n=step.items.length;
+  const bank='<div class="word-row">'+step.bank.map(w=>'<span class="word-chip" style="padding:6px 12px;font-size:.9rem;">'+w+'<button class="speak-btn" onclick="speak(\''+w+'\')">🔊</button></span>').join('')+'</div>';
+  if(a.done)return '<div style="text-align:center;padding:18px 0;"><div style="font-size:2.4rem;">🎉</div><h3>Score: '+a.score+' / '+n+'</h3><p>First-try answers count. Well done!</p><button class="check-btn" style="margin-left:0;" onclick="arrowsReset()">Do it again</button></div>';
+  const it=step.items[a.i];
+  return '<div style="font-size:.8rem;color:var(--ink-soft);margin-bottom:6px;">Arrow '+(a.i+1)+' of '+n+'</div>'+bank+
+   '<div style="text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;">'+dirIcon(it.icon).replace('width="76" height="76"','width="150" height="150"')+
+   '<input class="practice-input" id="acIn" style="width:100%;margin-top:8px;text-align:center;" autocomplete="off" autocapitalize="off" placeholder="type the phrase" '+(a.solved?'disabled value="'+it.answer+'"':'')+' onkeydown="if(event.key===\'Enter\')arrowsCheck()"></div>'+
+   '<div class="feedback '+(a.fb?(a.ok?'correct':'wrong'):'')+'" style="min-height:22px;">'+a.fb+'</div>'+
+   '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">'+(a.solved?'<button class="check-btn" style="margin-left:0;" onclick="arrowsNext()">'+(a.i===n-1?'Finish':'Next arrow ▶')+'</button>':'<button class="check-btn" style="margin-left:0;" onclick="arrowsCheck()">Check</button><button class="nav-btn secondary" onclick="arrowsHint()">💡 Hint</button>')+'<button class="speak-btn" onclick="speak(\''+it.answer+'\')">🔊 Hear it</button></div>';
+}
+
+/* ---- Activity 2: map simulation ---- */
+const SIM_OPTS=['go straight on','go past','take the first right','take the first left','take the second right','turn left'];
+const simState={r:0,mode:'P',cur:0,picks:[],checked:false,errs:0,msg:'',ok:true};
+function simS(){return ROUTES[simState.r].steps.filter(x=>x.m);}
+function simN(x){return dNorm(x).replace(/^take the /,'');}
+function simReset(r,m){simState.r=r;simState.mode=m;simState.cur=0;simState.picks=[];simState.checked=false;simState.errs=0;simState.msg='';renderLessonStep();}
+function simAnswer(a){
+  const S=simS(),st=simState;if(st.cur>=S.length)return;
+  if(st.mode==='P'){
+    if(simN(a)===simN(S[st.cur].m)){st.picks.push(S[st.cur].m);st.cur++;st.ok=true;st.msg='Correct!';}
+    else{st.errs++;st.ok=false;st.msg='Not quite. Listen again or show the answer.';}
+  }else{
+    if(!String(a).trim()){st.ok=false;st.msg='Type an answer first.';}
+    else{st.picks.push(a);st.cur++;st.ok=true;st.msg=st.cur<S.length?'Answer saved.':'All steps done. Press Check my answers.';}
+  }
+  renderLessonStep();
+}
+function simPick(i){simAnswer(SIM_OPTS[i]);}
+function simType(){simAnswer(document.getElementById('simIn').value);}
+function simHint(){simState.ok=true;simState.msg='Answer: '+simS()[simState.cur].m;renderLessonStep();}
+function simCheck(){const S=simS();const n=S.filter((x,i)=>simN(simState.picks[i])===simN(x.m)).length;simState.checked=true;simState.msg='Score: '+n+' / '+S.length;simState.ok=n===S.length;renderLessonStep();}
+function simSVG(){
+  const S=simS(),st=simState,R=ROUTES[st.r];let g=routeBase();
+  const fin=st.cur>=S.length&&(st.mode==='P'||st.checked);
+  S.forEach((x,i)=>{if(i>=st.picks.length)return;
+    const good=simN(st.picks[i])===simN(x.m);
+    const col=st.mode==='T'&&!st.checked?'#1B2A4A':(good?'#2F9E5B':'#E5533D');
+    const q=x.p,l=q[q.length-1],f=q[q.length-2],an=Math.atan2(l[1]-f[1],l[0]-f[0])*180/Math.PI;
+    g+='<polyline points="'+q.map(z=>z.join(',')).join(' ')+'" fill="none" stroke="'+col+'" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><polygon points="-16,-16 16,0 -16,16" fill="'+col+'" transform="translate('+l[0]+','+l[1]+') rotate('+an+')"/>';});
+  if(fin)R.hl.forEach(h=>{g+='<rect x="'+(h[0]-3)+'" y="'+(h[1]-3)+'" width="'+(h[2]+6)+'" height="'+(h[3]+6)+'" fill="none" stroke="#E8A33D" stroke-width="6" rx="4"/>';});
+  return '<svg viewBox="0 0 800 640" style="width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:14px;">'+g+'</svg>';
+}
+function simHTML(){
+  const st=simState,S=simS(),R=ROUTES[st.r],fin=st.cur>=S.length;
+  const on=(c)=>c?' selected-correct':'';
+  const modes='<div style="display:flex;gap:6px;margin-bottom:8px;"><button class="quiz-opt'+on(st.mode==='P')+'" style="flex:1;padding:8px;" onclick="simReset('+st.r+',\'P\')">Practice mode</button><button class="quiz-opt'+on(st.mode==='T')+'" style="flex:1;padding:8px;" onclick="simReset('+st.r+',\'T\')">Test mode</button></div>';
+  const tabs='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+ROUTES.map((x,i)=>'<button class="quiz-opt'+on(i===st.r)+'" style="padding:7px 12px;font-size:.85rem;" onclick="simReset('+i+',\''+st.mode+'\')">'+x.dest+'</button>').join('')+'</div>';
+  const chips='<div style="display:flex;gap:6px;margin:0 0 10px;">'+S.map((x,i)=>{
+    let bg='var(--paper)',t=String(i+1);
+    if(st.checked){const g=simN(st.picks[i])===simN(x.m);bg=g?'#d8f3e3':'#fbd9d3';}
+    else if(i<st.picks.length)t+=' ✓';else if(i===st.cur)bg='var(--amber-soft)';
+    return '<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font-weight:600;font-size:.85rem;background:'+bg+';border:1px solid var(--line)">'+t+'</div>';}).join('')+'</div>';
+  let card,ctrl='';
+  if(!fin){
+    card='<div style="font-size:.78rem;color:var(--ink-soft);">Step '+(st.cur+1)+' of '+S.length+' · what is the move?</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:600;">“'+S[st.cur].t+'” <button class="speak-btn" onclick="speak(simS()[simState.cur].t)">🔊</button></div>';
+    if(st.mode==='P')ctrl='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">'+SIM_OPTS.map((o,i)=>'<button class="quiz-opt" style="padding:10px;" onclick="simPick('+i+')">'+o+'</button>').join('')+'</div><button class="nav-btn secondary" style="margin-top:8px;" onclick="simHint()">💡 Show the answer</button>';
+    else ctrl='<div style="display:flex;gap:8px;margin-top:10px;"><input class="practice-input" id="simIn" style="flex:1;" autocomplete="off" autocapitalize="off" placeholder="type the move" onkeydown="if(event.key===\'Enter\')simType()"><button class="check-btn" style="margin-left:0;" onclick="simType()">Save</button></div>';
+  }else{
+    const arr=R.steps[R.steps.length-1].t;
+    if(st.mode==='P')card='<div style="font-weight:600;">🎉 Route complete! Mistakes: '+st.errs+'</div><div style="margin-top:4px;">'+arr+'</div>';
+    else if(!st.checked){card='<div style="font-weight:600;">All steps answered.</div>';ctrl='<button class="check-btn" style="margin:10px 0 0;" onclick="simCheck()">✅ Check my answers</button>';}
+    else card='<div style="font-weight:600;">Score finished.</div><div style="margin-top:6px;font-size:.9rem;">'+S.map((x,i)=>{const g=simN(st.picks[i])===simN(x.m);return (g?'✅ ':'❌ ')+(i+1)+'. '+x.m+(g?'':' <span style="color:#c0392b">(you wrote: '+(st.picks[i]||'—')+')</span>');}).join('<br>')+'</div><div style="margin-top:6px;">'+arr+'</div>';
+    ctrl+=(ctrl?'':'<div style="margin-top:10px;"></div>')+'<button class="nav-btn secondary" onclick="simReset('+st.r+',\''+st.mode+'\')">🔁 Try again</button>';
+  }
+  return modes+tabs+chips+simSVG()+'<div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;padding:12px 14px;margin:12px 0 6px;">'+card+ctrl+'</div><div class="feedback '+(st.msg?(st.ok?'correct':'wrong'):'')+'" style="min-height:22px;">'+st.msg+'</div>';
 }
 
 function checkFill(){
@@ -4851,18 +5061,29 @@ _L('l-m5','Listening / Lesson 5','🎧','Prices, Money & Change','listening',[
 ],'Well done! You can follow prices, totals and change.');
 
 _L('l-m6','Listening / Lesson 6','🎧','Directions','listening',[
- _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>🧭 understand simple directions;</li><li>🏦 find a place from what you hear.</li></ul>`),
- _P('2 · Key phrases',['Go straight for two blocks.','Turn left at the light.','Turn right on Main Street.','It is next to the pharmacy.','It is on the corner.','You can not miss it.']),
- _LS('3 · Listening 1','Listen: where is the bank?','Play the conversation and answer.',[
-  {w:'A',t:'Excuse me. Is there a bank near here?'},{w:'B',t:'Yes. Go straight for two blocks, then turn left.'},{w:'A',t:'Two blocks, then left?'},{w:'B',t:'That is right. The bank is on your right, next to the pharmacy.'},{w:'A',t:'Thank you very much.'}],
-  [_q('How far must he go straight?',['Two blocks','One block','Three blocks'],'Two blocks'),_q('Then he turns…',['Left','Right'],'Left'),_q('The bank is next to…',['The pharmacy','The school','The hotel'],'The pharmacy')]),
- _LS('4 · Listening 2','Listen: to the market','Play the directions and answer.',[
-  {w:'A',t:'Can you tell me how to get to the market?'},{w:'B',t:'Of course. Walk up Third Street and turn right at the light.'},{w:'A',t:'Turn right at the light.'},{w:'B',t:'Then go straight for one block. The market is on the corner, on your left.'},{w:'A',t:'Thank you!'}],
-  [_q('Where does he turn right?',['At the light','At the school','At the bank'],'At the light'),_q('After the turn, how far does he go?',['One block','Two blocks'],'One block'),_q('Where is the market?',['On the corner, on the left','Next to the bank','On the right, far away'],'On the corner, on the left')]),
- _F('5 · Complete the directions','Type the missing word.',[
-  {before:'Go',after:'for two blocks.',answer:'straight'},{before:'Turn',after:'at the light.',answer:'left|right'},{before:'The bank is',after:'to the pharmacy.',answer:'next'}]),
- _W('6 · Your turn','Give directions','Write directions from your school to the market.','Go straight for two blocks. Turn left. The market is on the right.')
-],'Excellent! You can follow simple directions.');
+ _I('1 · Objectives','By the end of this lesson you can…',`<ul class="info-list"><li>➡️ match arrows to direction phrases;</li><li>🗺️ follow a route on a map, step by step;</li><li>👂 listen to directions and find the place;</li><li>⌨️ type what you hear.</li></ul>`),
+ {render:'arrowcards',label:'2 · Activity 1: Arrows',heading:'What does the arrow mean?',intro:'One arrow at a time. Type the phrase. Use the word bank and the Hint button.',
+  bank:['go straight on','turn left','turn right','take the first left','take the first right','take the second left','take the second right','go past','roundabout','traffic lights','next to','opposite'],
+  items:[
+   {icon:'straight',answer:'go straight on'},{icon:'left',answer:'turn left'},{icon:'right',answer:'turn right'},
+   {icon:'left1',answer:'take the first left'},{icon:'right1',answer:'take the first right'},
+   {icon:'left2',answer:'take the second left'},{icon:'right2',answer:'take the second right'},{icon:'past',answer:'go past'},
+   {icon:'roundabout',answer:'roundabout'},{icon:'lights',answer:'traffic lights'},{icon:'next',answer:'next to'},{icon:'opposite',answer:'opposite'}]},
+ {render:'routemap',label:'3 · Watch the route',heading:'Bond Street — you start at the X',intro:'Choose a place. Press Next step and follow the red arrow. Press 🔊 to hear each step.'},
+ {render:'sim',label:'4 · Activity 2: Map simulation',heading:'Follow the directions on the map',intro:'Practice: choose the move, with feedback. Test: type your answers, then check them at the end.'},
+ _LS('5 · Listening','Listen: where does the speaker send you?','Look at the map. You hear four sets of directions. Play, then complete: "The speaker gives directions to the…". You can play again.',[
+  {w:'A',t:'Number A. Excuse me, can you help me?'},{w:'B',t:ROUTES[0].say},
+  {w:'A',t:'Number B. Excuse me, can you help me?'},{w:'B',t:ROUTES[1].say},
+  {w:'A',t:'Number C. Excuse me, can you help me?'},{w:'B',t:ROUTES[2].say},
+  {w:'A',t:'Number D. Excuse me, can you help me?'},{w:'B',t:ROUTES[3].say}],
+  ['A','B','C','D'].map((L,i)=>_q(L+'. The speaker gives directions to the…',['Underground station','Café','Bus station','Hospital'],ROUTES[i].dest))),
+ _F('6 · Complete the directions','Type the missing word from the box: take · past · on · straight · at · go · second',[
+  {before:'Go',after:'on.',answer:'straight'},{before:'',after:'past the traffic lights.',answer:'go'},{before:'It is the building next to the library',after:'the left.',answer:'on'},
+  {before:'',after:'the roundabout turn left.',answer:'at'},{before:'Then',after:'the first left on to Green Street.',answer:'take'},{before:'Go past the traffic lights and take the',after:'right on to King\'s Road.',answer:'second'}]),
+ _F('7 · Dictation','Press 🔊, listen, and type what you hear (small letters, no full stop).',[
+  _d('Turn left.','', 'turn left'),_d('Go straight on.','','go straight on'),_d('Take the second right.','','take the second right'),_d('Go past the traffic lights.','','go past the traffic lights')]),
+ _W('8 · Your turn','Give directions','Look at the map. You are at the X. Write directions to the cinema.','Go straight on. Go past the traffic lights. Take the first left on to Green Street. Go straight on. The cinema is on the right, next to the theatre.')
+],'Excellent! You can follow and give directions.');
 
 /* ---------------- SPEAKING ---------------- */
 _L('s-m1','Speaking / Lesson 1','🗣️','Greetings & Introductions','speaking',[
@@ -4998,7 +5219,7 @@ MODULES.listening=[
  {id:'l-m3',title:'Lesson 3 — Clothes & Colours',sub:'What people wear; in the clothes shop',built:true},
  {id:'l-m4',title:'Lesson 4 — Time & Daily Routine',sub:'Telling the time; a student\'s day',built:true},
  {id:'l-m5',title:'Lesson 5 — Prices, Money & Change',sub:'Francs, totals and change',built:true},
- {id:'l-m6',title:'Lesson 6 — Directions',sub:'Go straight, turn left, next to',built:true}];
+ {id:'l-m6',title:'Lesson 6 — Directions',sub:'Arrows, a map, listening and typing',built:true}];
 MODULES.speaking=[
  {id:'s-m1',title:'Lesson 1 — Greetings & Introductions',sub:'Hello, how are you, this is my friend',built:true},
  {id:'s-m2',title:'Lesson 2 — Talking About Your Day & Free Time',sub:'Routines and how often',built:true},
