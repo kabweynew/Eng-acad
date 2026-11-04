@@ -157,6 +157,29 @@
   .qr-box{width:240px;max-width:100%;margin:10px auto 14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;}
   .qr-box svg{display:block;width:100%;height:auto;}
 </style>
+<style id="cg-style">
+  /* ---------- Cupboard game: pass the tool to the chef ---------- */
+  .cg-bubble{position:relative;background:#fff;border:2px solid #3D3A35;border-radius:16px;padding:10px 12px;font-weight:600;margin:6px 0 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .cg-bubble::after{content:"";position:absolute;right:38px;bottom:-9px;width:14px;height:14px;background:#fff;border-right:2px solid #3D3A35;border-bottom:2px solid #3D3A35;transform:rotate(45deg);}
+  .cg-stage{position:relative;display:flex;align-items:flex-end;gap:6px;}
+  .cg-cup{flex:1;min-width:0;background:linear-gradient(#a97545,#8d5d33);border:6px solid #5e3b1e;border-radius:12px 12px 4px 4px;padding:8px 8px 0;box-shadow:inset 0 0 0 2px #c79562,0 3px 0 rgba(0,0,0,.15);}
+  .cg-shelf{display:grid;gap:6px;padding:6px 4px 0;background:repeating-linear-gradient(90deg,#f1e0c0 0 14px,#ecd9b6 14px 28px);border-bottom:10px solid #6b4423;}
+  .cg-slot{height:76px;background:none;border:0;padding:0 0 3px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent;}
+  .cg-slot img{max-width:100%;max-height:68px;object-fit:contain;background:#fff;border-radius:8px;box-shadow:0 2px 3px rgba(0,0,0,.25);transition:transform .12s;}
+  .cg-slot:not(:disabled):active img{transform:scale(.93);}
+  .cg-slot:disabled{cursor:default;}
+  .cg-shake{animation:cgShake .45s;}
+  .cg-shake img{outline:3px solid var(--rose);outline-offset:1px;}
+  @keyframes cgShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+  .cg-chef{flex:0 0 86px;display:block;margin-bottom:-2px;}
+  .cg-chef svg{width:86px;height:auto;display:block;}
+  .cg-hop{animation:cgHop .75s;}
+  @keyframes cgHop{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-16px) rotate(-4deg)}60%{transform:translateY(0) rotate(3deg)}80%{transform:translateY(-6px) rotate(0)}}
+  .cg-fly{position:absolute;z-index:6;object-fit:contain;background:#fff;border-radius:8px;box-shadow:0 8px 14px rgba(0,0,0,.3);pointer-events:none;will-change:transform;}
+  .cg-ring{position:absolute;width:48px;height:48px;border-radius:50%;border:3px solid var(--amber);pointer-events:none;z-index:5;}
+  .cg-floor{height:8px;background:#d9c7a3;border-radius:0 0 8px 8px;margin-bottom:6px;}
+  .cg-listen{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--ink-soft);margin-top:8px;}
+</style>
 </head>
 <body>
 
@@ -4677,6 +4700,15 @@ function renderLessonStep(){
       ${stepNav(!isFirst, !isLast)}`;
   }
 
+  else if (step.render === 'cupboard') {
+    body = `
+      <div class="step-index">Game</div>
+      <h3>${step.heading}</h3>
+      <p style="margin:0 0 6px;color:var(--ink-soft);font-size:.9rem;">${step.intro || 'Listen to the chef. Find the tool on the shelves and tap it.'}</p>
+      ${cgHTML(step)}
+      ${stepNav(!isFirst, !isLast)}`;
+  }
+
   else if (step.render === 'examtype') {
     body = `
       <div class="step-index">Exam</div>
@@ -5026,6 +5058,101 @@ function pqHTML(step){
   return '<div style="font-size:.8rem;color:var(--ink-soft);">Question '+(S.i+1)+' of '+n+'</div>'+q+a+
     '<div class="feedback '+(S.fb?(S.ok?'correct':'wrong'):'')+'" style="min-height:22px;margin-top:8px;">'+S.fb+'</div>'+
     (S.solved?'<button class="check-btn" style="margin:8px 0 0;" onclick="pqNext()">'+(S.i===n-1?'Finish':'Next ▶')+'</button>':'');
+}
+
+/* ---------------- CUPBOARD GAME: pass the tool to the chef ---------------- */
+const cgState={key:'',tok:0,order:[],shelf:[],i:0,score:0,tried:false,solved:false,busy:false,done:false,listenOnly:false,fb:'',ok:true,said:''};
+function cgStep(){return LESSONS[lessonState.moduleId].steps[lessonState.stepIndex];}
+function cgPool(){const st=cgStep();return POOLS[(st&&st.pool)||'ut'];}
+function cgShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function cgCue(c){return 'Pass me the '+cgPool()[c][0].toLowerCase()+', please.';}
+function cgThanks(c){return 'Thank you for passing the '+cgPool()[c][0].toLowerCase()+'!';}
+function cgDeal(){
+  const S=cgState,st=cgStep(),P=cgPool(),c=S.order[S.i];
+  const slots=Math.min((st.cols||3)*(st.shelves||2),P.length);
+  const others=cgShuffle(P.map((_,k)=>k).filter(k=>k!==c)).slice(0,slots-1);
+  S.shelf=cgShuffle(others.concat([c]));
+}
+function cgInit(step){
+  const S=cgState,k=lessonState.moduleId+':'+lessonState.stepIndex;
+  if(S.key===k)return;
+  const P=cgPool(),n=Math.min(step.n||8,P.length);
+  S.key=k;S.tok++;S.order=cgShuffle(P.map((_,i)=>i)).slice(0,n);
+  S.i=0;S.score=0;S.tried=false;S.solved=false;S.busy=false;S.done=false;S.fb='';S.ok=true;S.said='';
+  cgDeal();
+}
+function cgHTML(step){
+  cgInit(step);
+  const S=cgState,P=cgPool(),n=S.order.length;
+  if(S.done)return '<div style="text-align:center;padding:18px 0;"><div style="font-size:2.4rem;">🎉</div><h3>Score: '+S.score+' / '+n+'</h3><p>First-try answers count.</p><button class="check-btn" style="margin-left:0;" onclick="cgReset()">Play again with new words</button></div>';
+  const c=S.order[S.i],cols=step.cols||3;
+  const say=S.solved?'“'+cgThanks(c)+'”':(S.listenOnly?'🔊 Listen to the chef…':'“'+cgCue(c)+'”');
+  const rows=[];for(let r=0;r<S.shelf.length;r+=cols)rows.push(S.shelf.slice(r,r+cols));
+  const shelves=rows.map(row=>'<div class="cg-shelf" style="grid-template-columns:repeat('+cols+',1fr);">'+row.map(o=>'<button class="cg-slot" data-cg="'+o+'" '+((S.solved||S.busy)?'disabled':'')+' onclick="cgTap('+o+')"><img src="'+P[o][1]+'" alt=""></button>').join('')+'</div>').join('');
+  const tag=S.key+':'+S.i;
+  if(S.said!==tag){S.said=tag;setTimeout(()=>{if(cgState.said===tag&&!cgState.solved&&document.getElementById('cgStage'))speak(cgCue(c));},450);}
+  return '<div style="font-size:.8rem;color:var(--ink-soft);">Question '+(S.i+1)+' of '+n+'</div>'+
+    '<div class="cg-bubble"><span id="cgSay">'+say+'</span><button class="speak-btn" onclick="cgSpeak()">🔊</button></div>'+
+    '<div class="cg-stage" id="cgStage"><div class="cg-cup">'+shelves+'</div><div class="cg-chef" id="cgChef">'+CHEF+'</div></div><div class="cg-floor"></div>'+
+    '<div class="feedback '+(S.fb?(S.ok?'correct':'wrong'):'')+'" id="cgFb" style="min-height:22px;">'+S.fb+'</div>'+
+    '<div id="cgNextWrap">'+(S.solved?'<button class="check-btn" style="margin:6px 0 0;" onclick="cgNext()">'+(S.i===n-1?'Finish':'Next ▶')+'</button>':'')+'</div>'+
+    '<label class="cg-listen"><input type="checkbox" '+(S.listenOnly?'checked':'')+' onchange="cgListen(this.checked)"> Listen only (hide the words)</label>';
+}
+function cgFb(){const e=document.getElementById('cgFb');if(!e)return;e.textContent=cgState.fb;e.className='feedback '+(cgState.fb?(cgState.ok?'correct':'wrong'):'');}
+function cgSpeak(){const S=cgState,c=S.order[S.i];speak(S.solved?cgThanks(c):cgCue(c));}
+function cgListen(v){if(cgState.busy)return;cgState.listenOnly=v;renderLessonStep();}
+function cgReset(){cgState.key='';renderLessonStep();}
+function cgNext(){
+  const S=cgState;S.i++;S.fb='';S.ok=true;S.solved=false;S.tried=false;S.busy=false;S.tok++;
+  if(S.i>=S.order.length)S.done=true;else cgDeal();
+  renderLessonStep();
+}
+function cgTap(o){
+  const S=cgState;if(S.busy||S.solved||S.done)return;
+  const c=S.order[S.i],btn=document.querySelector('.cg-slot[data-cg="'+o+'"]');
+  if(o!==c){
+    S.tried=true;S.fb='Not quite. Listen again.';S.ok=false;cgFb();
+    if(btn){btn.classList.remove('cg-shake');void btn.offsetWidth;btn.classList.add('cg-shake');setTimeout(()=>btn.classList.remove('cg-shake'),600);}
+    const tok=S.tok;setTimeout(()=>{if(cgState.tok===tok&&!cgState.solved)speak(cgCue(c));},650);
+    return;
+  }
+  S.busy=true;S.fb='';S.ok=true;cgFb();
+  document.querySelectorAll('.cg-slot').forEach(b=>b.disabled=true);
+  cgFly(btn,c);
+}
+function cgFly(btn,c){
+  const S=cgState,tok=S.tok,stage=document.getElementById('cgStage'),chef=document.getElementById('cgChef'),img=btn&&btn.querySelector('img');
+  let landed=false;const land=()=>{if(landed)return;landed=true;cgLanded(c,tok);};
+  if(!stage||!chef||!img||!img.animate){land();return;}
+  const sr=stage.getBoundingClientRect(),ir=img.getBoundingClientRect(),cr=chef.getBoundingClientRect();
+  const fly=document.createElement('img');fly.src=img.src;fly.alt='';fly.className='cg-fly';
+  fly.style.left=(ir.left-sr.left)+'px';fly.style.top=(ir.top-sr.top)+'px';fly.style.width=ir.width+'px';fly.style.height=ir.height+'px';
+  stage.appendChild(fly);img.style.visibility='hidden';
+  const ring=document.createElement('span');ring.className='cg-ring';
+  ring.style.left=(ir.left-sr.left+ir.width/2-24)+'px';ring.style.top=(ir.top-sr.top+ir.height/2-24)+'px';stage.appendChild(ring);
+  ring.animate([{transform:'scale(.3)',opacity:.9},{transform:'scale(1.7)',opacity:0}],{duration:450,easing:'ease-out'}).onfinish=()=>ring.remove();
+  const dx=(cr.left+cr.width*0.2)-(ir.left+ir.width/2),dy=(cr.top+cr.height*0.7)-(ir.top+ir.height/2);
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dur=reduce?300:1300;
+  const a=fly.animate([
+    {transform:'translate(0px,0px) scale(1) rotate(0deg)',offset:0},
+    {transform:'translate(0px,-16px) scale(1.5) rotate(-8deg)',offset:.2},
+    {transform:'translate(0px,-10px) scale(1.4) rotate(6deg)',offset:.32},
+    {transform:'translate('+(dx*.55)+'px,'+(dy*.5-60)+'px) scale(1.2) rotate(-6deg)',offset:.7},
+    {transform:'translate('+dx+'px,'+dy+'px) scale(.62) rotate(0deg)',offset:1}
+  ],{duration:dur,easing:'cubic-bezier(.45,.05,.4,1)',fill:'forwards'});
+  a.onfinish=land;setTimeout(land,dur+250);
+}
+function cgLanded(c,tok){
+  const S=cgState;if(S.tok!==tok)return;
+  S.busy=false;S.solved=true;if(!S.tried)S.score++;S.fb='Correct!';S.ok=true;
+  if(!document.getElementById('cgStage'))return;
+  cgFb();
+  const say=document.getElementById('cgSay');if(say)say.textContent='“'+cgThanks(c)+'”';
+  const chef=document.getElementById('cgChef');if(chef){chef.classList.remove('cg-hop');void chef.offsetWidth;chef.classList.add('cg-hop');}
+  speak(cgThanks(c));
+  const w=document.getElementById('cgNextWrap');
+  if(w)w.innerHTML='<button class="check-btn" style="margin:6px 0 0;" onclick="cgNext()">'+(S.i===S.order.length-1?'Finish':'Next ▶')+'</button>';
 }
 
 /* ---------------- RECIPE GAME: make pancakes ---------------- */
@@ -5585,7 +5712,8 @@ _L('k-m4','Kitchen & Restaurant English / Module 4','🍴','Kitchen Utensils (wi
    items:UT.slice(g[0],g[1]).map(u=>({pic:'<img src="'+u[1]+'" alt="'+u[0]+'" style="max-height:78px;max-width:100%;object-fit:contain;background:#fff;border-radius:8px;">',word:u[0]}))})),
  {render:'picquiz',mode:'choose',n:10,label:'5 · What is this?',heading:'Look and choose the word'},
  {render:'picquiz',mode:'listen',n:10,label:'6 · Listen and tap',heading:'Listen and tap the picture'},
- {render:'picquiz',mode:'type',n:10,label:'7 · Type the word',heading:'Look and type the word'}
+ {render:'cupboard',pool:'ut',n:8,label:'7 · Game: Pass me the…',heading:'The chef’s cupboard',intro:'The chef needs a tool. Listen, find it on the shelves and tap it.'},
+ {render:'picquiz',mode:'type',n:10,label:'8 · Type the word',heading:'Look and type the word'}
 ],'Great work! You know 51 kitchen utensils. Play the games again for new words.');
 (function(){const L=MODULES['kitchen-english'];const i=L.findIndex(m=>m.id==='k-m1');L.splice(i+1,0,{id:'k-m4',title:'Module 1B — Kitchen Utensils with Pictures',sub:'51 utensils: see, hear, choose and type',built:true});})();
 
@@ -5646,7 +5774,7 @@ const KSTEPS=[
   {render:'picquiz',pool:'ke'+k,mode:'choose',n:nq,label:_kl(g[2]+': What is this?'),heading:g[2]+' — look and choose'},
   {render:'picquiz',pool:'ke'+k,mode:'say',n:nq,label:_kl(g[2]+': Say it'),heading:g[2]+' — say the sentence'},
   {render:'picquiz',pool:'ke'+k,mode:'listen',n:nq,label:_kl(g[2]+': Listen and tap'),heading:g[2]+' — listen and tap'},
-  {render:'picquiz',pool:'ke'+k,mode:'pass',n:nq,label:_kl(g[2]+': Pass me the…'),heading:g[2]+' — Pass me the…'},
+  {render:'cupboard',pool:'ke'+k,n:nq,label:_kl(g[2]+': Pass me the…'),heading:g[2]+' — Pass me the…'},
   {render:'picquiz',pool:'ke'+k,mode:'type',n:nq,label:_kl(g[2]+': Type the word'),heading:g[2]+' — look and type'},
   ..._kread(k,g[2]),
   {render:'quiz',label:_kl(g[2]+': What is it for?'),heading:'What is it for?',questions:q.questions},
@@ -5792,6 +5920,79 @@ _L('k-m7','Kitchen & Restaurant English / Restaurant Service','🍽️','Restaur
  _I('26 · Self-check','Can you do these things in English?',`<ul class="info-list"><li>☐ I greet the customer politely.</li><li>☐ I use polite expressions (would, could, please).</li><li>☐ I take and repeat the order.</li><li>☐ I answer a request or a problem politely.</li><li>☐ I understand a bill and give change.</li><li>☐ I speak without reading.</li></ul><p>Teacher marking grid: 10 criteria × 2 points = 20.</p>`)
 ],'Excellent! You can handle a complete restaurant service in English.');
 (function(){const L=MODULES['kitchen-english'];let i=L.findIndex(m=>m.id==='k-m3');if(i<0)i=L.length-1;L.splice(i+1,0,{id:'k-m7',title:'Restaurant Service — From Welcome to Bill',sub:'Seconde Cuisine: welcome, order, serve, problems, payment, role-play',built:true});})();
+
+
+/* ---------------- Kitchen English: Lesson 3 — A Chef Gives Instructions (Preparing Vegetable Soup) ---------------- */
+_L('k-m9','Kitchen & Restaurant English / Lesson 3','🥣','A Chef Gives Instructions — Preparing Vegetable Soup','kitchen-english',[
+ _I('1 · Objectives','English for Seconde Cuisine — Lesson 3',`<p><strong>Topic:</strong> Preparing vegetable soup &nbsp;·&nbsp; <strong>Duration:</strong> 60 minutes</p><ul class="info-list"><li>🔪 learn kitchen equipment, ingredients and cooking verbs;</li><li>📖 read a dialogue between a chef and a student;</li><li>📝 give instructions with the imperative: <strong>Wash the vegetables.</strong> / <strong>Don't touch the hot stove.</strong>;</li><li>🗣️ practise a chef and student conversation.</li></ul>`),
+ _I('2 · Warm-up: In the kitchen','Discuss these questions with your teacher',`<ol class="info-list"><li>What can you see in a professional kitchen?</li><li>What equipment do you use to cut vegetables?</li><li>What do you use to cook soup?</li><li>Can you name three vegetables?</li><li>What does a chef do?</li></ol><p>Today, <strong>Chef Ahmed</strong> and <strong>Ali</strong> are going to prepare vegetable soup. Let's discover the equipment, ingredients and instructions they need.</p>`),
+ _I('3 · Vocabulary A: Kitchen equipment','Kitchen equipment',trTable('Word','Function',[['Knife','Used to cut food.'],['Chopping board','Used as a surface for cutting.'],['Cooking pot','Used to cook soup.'],['Stove','Used to heat and cook food.'],['Wooden spoon','Used to stir food.']])),
+ _I('4 · Vocabulary B: Ingredients','Ingredients',trTable('Word','Category',[['Carrot','Vegetable'],['Potato','Vegetable'],['Onion','Vegetable'],['Oil','Cooking ingredient'],['Water','Liquid']])),
+ _I('5 · Vocabulary C: Cooking verbs','Cooking verbs',trTable('Verb','Meaning',[['Wash','Clean with water.'],['Peel','Remove the skin.'],['Chop','Cut into small pieces.'],['Slice','Cut into thin pieces.'],['Heat','Make something hot.'],['Add','Put something into something else.'],['Stir','Move a spoon around in food.'],['Simmer','Cook gently at a low temperature.']])),
+ _Q('6 · Practice 1: Match the words',[
+  _q('Knife =',['An instrument used for cutting.','Remove the skin.','Make something hot.'],'An instrument used for cutting.'),
+  _q('Peel =',['Remove the skin.','Cut into small pieces.','Move food around with a spoon.'],'Remove the skin.'),
+  _q('Stir =',['Move food around with a spoon.','Make something hot.','Remove the skin.'],'Move food around with a spoon.'),
+  _q('Heat =',['Make something hot.','An instrument used for cutting.','Cut into small pieces.'],'Make something hot.'),
+  _q('Chop =',['Cut into small pieces.','Move food around with a spoon.','Make something hot.'],'Cut into small pieces.')]),
+ _F('7 · Practice 2: Unscramble the words','Put the letters in the correct order. Use small letters.',[
+  {before:'EFINK =',after:'',answer:'knife'},
+  {before:'TPO =',after:'',answer:'pot'},
+  {before:'NIOON =',after:'',answer:'onion'},
+  {before:'RTAOCR =',after:'',answer:'carrot'},
+  {before:'LEPE =',after:'',answer:'peel'},
+  {before:'RITS =',after:'',answer:'stir'},
+  {before:'HSAW =',after:'',answer:'wash'},
+  {before:'DDA =',after:'',answer:'add'}]),
+ _F('8 · Practice 3: Complete the sentences','Use: knife · cooking pot · chopping board · stove · wooden spoon',[
+  {before:'I use a',after:'to cut vegetables.',answer:'knife'},
+  {before:'I put the vegetables in a',after:'.',answer:'cooking pot'},
+  {before:'I use a',after:'to stir the soup.',answer:'wooden spoon'},
+  {before:'I cut the carrots on a',after:'.',answer:'chopping board'},
+  {before:'I cook the soup on the',after:'.',answer:'stove'}]),
+ _Pa('9 · Reading: A chef gives instructions',"Characters: Chef Ahmed (the head chef) and Ali (a cooking student). Setting: a professional kitchen during practical training.\n\nChef Ahmed: Good morning, Ali.\nAli: Good morning, Chef.\nChef Ahmed: Today, we are going to prepare a vegetable soup.\nAli: All right, Chef. What should I do first?\nChef Ahmed: First, wash the vegetables carefully.\nAli: Should I peel the carrots and potatoes?\nChef Ahmed: Yes. Peel the carrots and potatoes, and then chop them into small pieces.\nAli: What about the onions, Chef?\nChef Ahmed: Peel the onions and slice them thinly.\nAli: Where is the chopping board?\nChef Ahmed: It is on the worktable, next to the knife.\nAli: Thank you, Chef.\nChef Ahmed: Now, take a cooking pot and put it on the stove.\nAli: Should I add the vegetables now?\nChef Ahmed: Not yet. First, heat a little oil and add the onions.\nAli: Should I stir them?\nChef Ahmed: Yes. Stir them gently for two minutes. Then add the other vegetables and some water.\nAli: How long should I cook the soup?\nChef Ahmed: Let it simmer until the vegetables are tender.\nAli: All right, Chef. I will prepare everything carefully.\nChef Ahmed: Good. Remember to keep your workstation clean and handle the knife safely.\nAli: Yes, Chef."),
+ _Q('10 · Text comprehension 1: Answer the questions',[
+  _q('What are Chef Ahmed and Ali going to prepare?',['A vegetable soup','A chicken stew','A fruit salad'],'A vegetable soup'),
+  _q('What should Ali do first?',['Wash the vegetables carefully','Peel the onions','Heat the oil'],'Wash the vegetables carefully'),
+  _q('Which vegetables does Ali peel?',['Carrots, potatoes and onions','Only carrots','Tomatoes and cabbage'],'Carrots, potatoes and onions'),
+  _q('What should Ali do with the onions?',['Peel them and slice them thinly','Chop them into big pieces','Add them to the water'],'Peel them and slice them thinly'),
+  _q('Where is the chopping board?',['On the worktable, next to the knife','On the stove','In the cooking pot'],'On the worktable, next to the knife'),
+  _q('What should Ali heat in the cooking pot first?',['A little oil','Some water','The potatoes'],'A little oil'),
+  _q('When should Ali add the other vegetables?',['After stirring the onions for two minutes','Before heating the oil','Before washing them'],'After stirring the onions for two minutes'),
+  _q('What does the chef tell Ali about safety and cleanliness?',['Keep your workstation clean and handle the knife safely','Wash the pot after lunch','Wear a hat and gloves'],'Keep your workstation clean and handle the knife safely')]),
+ {render:'order',label:'11 · Text comprehension 2: Correct order',heading:'Put the instructions in the correct order',items:['Wash the vegetables carefully.','Peel and chop the carrots and potatoes.','Heat a little oil and add the onions.','Stir the onions gently for two minutes.','Add the other vegetables and some water.','Let the soup simmer until the vegetables are tender.']},
+ _F('12 · Sentence construction','Put the words in the correct order (small letters, no full stop).',[
+  {before:'vegetables / wash / the / carefully →',after:'',answer:'wash the vegetables carefully|carefully wash the vegetables'},
+  {before:'potatoes / peel / the →',after:'',answer:'peel the potatoes'},
+  {before:'small / chop / pieces / into / them →',after:'',answer:'chop them into small pieces'},
+  {before:'oil / heat / little / a →',after:'',answer:'heat a little oil'},
+  {before:'onions / the / add →',after:'',answer:'add the onions'},
+  {before:'gently / stir / soup / the →',after:'',answer:'stir the soup gently|gently stir the soup'},
+  {before:'water / some / add →',after:'',answer:'add some water'},
+  {before:'clean / workstation / keep / your →',after:'',answer:'keep your workstation clean'}]),
+ _I('13 · Grammar discovery: Giving instructions','Look at these sentences from the dialogue',`<ul class="info-list"><li>${sp('Wash the vegetables.')} Wash the vegetables.</li><li>${sp('Peel the carrots.')} Peel the carrots.</li><li>${sp('Chop them into small pieces.')} Chop them into small pieces.</li><li>${sp('Heat a little oil.')} Heat a little oil.</li><li>${sp('Add the onions.')} Add the onions.</li><li>${sp('Stir them gently.')} Stir them gently.</li></ul><p>Think, then answer the questions on the next page.</p>`),
+ _Q('14 · Grammar discovery: Think and answer',[
+  _q('Are these sentences asking questions or giving instructions?',['Giving instructions','Asking questions','Saying thank you'],'Giving instructions'),
+  _q('What is the first word in each instruction?',['A verb (wash, peel, chop…)','A noun (the vegetables…)','The word "Chef"'],'A verb (wash, peel, chop…)'),
+  _q('Do we use the verb in its base form?',['Yes','No, we add -ing','No, we add -ed'],'Yes'),
+  _q('How can we tell someone NOT to do something?',["Don't + base verb",'Not + verb + -ing','Never to + verb'],"Don't + base verb")]),
+ _I('15 · Grammar rule: The imperative','The imperative',`<p>We use the imperative to give <strong>instructions, commands or advice</strong>.</p><p><strong>A. Positive instructions:</strong> use the base form of the verb.</p><ul class="info-list"><li>${sp('Wash the vegetables.')} Wash the vegetables.</li><li>${sp('Peel the potatoes.')} Peel the potatoes.</li><li>${sp('Chop the onions.')} Chop the onions.</li><li>${sp('Heat the oil.')} Heat the oil.</li></ul><p><strong>B. Negative instructions:</strong> use <strong>DON'T</strong> + base form of the verb.</p><ul class="info-list"><li>${sp("Don't touch the hot stove.")} Don't touch the hot stove.</li><li>${sp("Don't add too much salt.")} Don't add too much salt.</li><li>${sp("Don't leave the kitchen dirty.")} Don't leave the kitchen dirty.</li></ul><p><strong>C. Polite instructions:</strong> use <strong>PLEASE</strong> to make an instruction more polite.</p><ul class="info-list"><li>${sp('Please wash the vegetables.')} Please wash the vegetables.</li><li>${sp('Please bring me the knife.')} Please bring me the knife.</li><li>${sp('Please clean your workstation.')} Please clean your workstation.</li></ul>`),
+ _F('16 · Grammar practice 1: Complete with the correct verbs','Use: wash · chop · add · stir · peel (small letters)',[
+  {before:'',after:'the vegetables before cooking.',answer:'wash'},
+  {before:'',after:'the potatoes carefully.',answer:'peel'},
+  {before:'',after:'the onions into small pieces.',answer:'chop'},
+  {before:'',after:'some water to the soup.',answer:'add'},
+  {before:'',after:'the soup gently.',answer:'stir'}]),
+ _F('17 · Grammar practice 2: Make the instructions negative','Example: Touch the hot pan. → Don\'t touch the hot pan. (small letters, no full stop)',[
+  {before:'Touch the hot stove. →',after:'',answer:"don't touch the hot stove|don’t touch the hot stove|dont touch the hot stove|do not touch the hot stove"},
+  {before:'Add too much salt. →',after:'',answer:"don't add too much salt|don’t add too much salt|dont add too much salt|do not add too much salt"},
+  {before:'Leave the kitchen dirty. →',after:'',answer:"don't leave the kitchen dirty|don’t leave the kitchen dirty|dont leave the kitchen dirty|do not leave the kitchen dirty"},
+  {before:'Waste the ingredients. →',after:'',answer:"don't waste the ingredients|don’t waste the ingredients|dont waste the ingredients|do not waste the ingredients"}]),
+ _P('18 · Speaking: Useful expressions',['What should I do first?','Should I peel the potatoes?','Where is the knife?','Yes, Chef.','All right, Chef.','Please wash the vegetables.']),
+ _I('19 · Speaking: The chef and the student','Work in pairs',`<p><strong>Student A:</strong> You are the chef. Give instructions for preparing vegetable soup.</p><p><strong>Student B:</strong> You are the cooking student. Listen, respond and ask questions.</p><div class="ex-box">A: Wash the vegetables carefully.<br>B: Yes, Chef. Should I peel the potatoes?<br>A: Yes. Peel the potatoes and chop them into small pieces.<br>B: All right, Chef. Where is the knife?</div><p>Each pair should produce a short conversation with <strong>at least four instructions and two questions</strong>.</p>`),
+ _W('20 · Homework','Six instructions for vegetable soup','Write six instructions that a chef can give to a cooking student when preparing vegetable soup. Use at least six different cooking verbs.',"1. Wash the vegetables. 2. Peel the carrots. 3. Chop the potatoes. 4. Slice the onions. 5. Heat a little oil. 6. Stir the soup gently.")
+],'Well done! You can give and follow kitchen instructions in English.');
+(function(){const L=MODULES['kitchen-english'];let i=L.findIndex(m=>m.id==='k-m6');if(i<0)i=L.length-1;L.splice(i+1,0,{id:'k-m9',title:'Lesson 3 — A Chef Gives Instructions: Vegetable Soup',sub:'Equipment, ingredients, cooking verbs, dialogue, the imperative',built:true});})();
 
 MODULES.listening=[
  {id:'l-m1',title:'Lesson 1 — Names, Spelling & Contact Details',sub:'Letters, phone numbers, email addresses',built:true},
