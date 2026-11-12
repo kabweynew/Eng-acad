@@ -6042,6 +6042,55 @@ _L('k-ex2','Kitchen & Restaurant English / Exam 2','📋','Exam 2 — Restaurant
 ],'Exam finished. Well done!');
 (function(){const L=MODULES['kitchen-english'];let i=L.findIndex(m=>m.id==='k-ex1');if(i<0)i=L.length-1;L.splice(i+1,0,{id:'k-ex2',title:'Exam 2 — Restaurant Service',sub:'2 activities, 16 marks: pictures and order of service',built:true});})();
 
+/* ---------------- EXAM 3 lesson: Kitchen utensils and cooking verbs ---------------- */
+(function(){const g=(P,n)=>P.find(x=>x[0]===n)[1];
+Object.assign(EXIMG,{u_spoon:g(KE,'Wooden spoon'),u_spatula:g(KE,'Spatula'),u_tongs:g(KE,'Tongs'),u_pin:g(KE,'Rolling pin'),u_peeler:g(KE,'Peeler'),u_sieve:g(KE,'Sieve'),u_ladle:g(KE,'Ladle'),u_grater:g(KE,'Grater'),v_peel:g(K2,'Peel'),v_cut:g(K2,'Cut'),v_wash:g(K2,'Wash your hands'),v_mix:g(K2,'Mix the ingredients'),v_pour:g(KV,'Pour')});})();
+const _u=w=>'^(a |the )?'+w+'$';
+const _v=w=>'^(to )?('+w+')( the| a| an)?( [a-z]+)?$';
+_L('k-ex3','Kitchen & Restaurant English / Exam 3','📋','Exam 3 — Utensils and Cooking Verbs','kitchen-english',[
+ _I('1 · Instructions','Exam 3',`<p>This exam has <strong>5 activities</strong> (8 + 5 + 9 + 4 + 4 = <strong>30 marks</strong> in total).</p><ol class="info-list"><li>Name the utensil (pictures)</li><li>Name the action (pictures)</li><li>Complete the instruction with the correct verb</li><li>Choose the right utensil for the job</li><li>Writing: a short recipe</li></ol><p>Type your answers. Press <strong>Check my answers</strong> at the end of each activity. You can check each activity only once.</p>`),
+ {render:'examtype',key:'c1',title:'Activity 1 — Name the utensil',label:'2 · Activity 1: Name the utensil',heading:'Activity 1 — Name the utensil (8 marks)',layout:'grid',
+  pre:'<p>Look at each picture. Write the name of the utensil.</p><div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:.9rem;"><strong>Word bank:</strong> tongs · ladle · peeler · rolling pin · sieve · wooden spoon · spatula · grater</div>',
+  items:[{num:1,pic:'u_spoon',ok:[_u('(wooden )?spoon')],sol:'wooden spoon'},
+   {num:2,pic:'u_spatula',ok:[_u('(spatula|turner|fish slice)')],sol:'spatula'},
+   {num:3,pic:'u_tongs',ok:[_u('(pair of )?tongs')],sol:'tongs'},
+   {num:4,pic:'u_pin',ok:[_u('rolling pin')],sol:'rolling pin'},
+   {num:5,pic:'u_peeler',ok:[_u('(vegetable |potato )?peeler')],sol:'peeler'},
+   {num:6,pic:'u_sieve',ok:[_u('(sieve|strainer)')],sol:'sieve'},
+   {num:7,pic:'u_ladle',ok:[_u('ladle')],sol:'ladle'},
+   {num:8,pic:'u_grater',ok:[_u('(cheese )?grater')],sol:'grater'}]},
+ {render:'examtype',key:'c2',title:'Activity 2 — Name the action',label:'3 · Activity 2: Name the action',heading:'Activity 2 — Name the action (5 marks)',layout:'grid',
+  pre:'<p>Look at each picture. Write the cooking verb.</p><div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:.9rem;"><strong>Word bank:</strong> wash · pour · cut · peel · mix</div>',
+  items:[{num:1,pic:'v_peel',ok:[_v('peel|peels|peeling')],sol:'peel'},
+   {num:2,pic:'v_cut',ok:[_v('cut|cuts|cutting|chop|chops|chopping|slice|slices|slicing')],sol:'cut'},
+   {num:3,pic:'v_wash',ok:[_v('wash|washes|washing|clean|cleans|cleaning|rinse|rinses|rinsing')],sol:'wash'},
+   {num:4,pic:'v_mix',ok:[_v('mix|mixes|mixing|stir|stirs|stirring|whisk|whisks|whisking|combine|combines|combining')],sol:'mix'},
+   {num:5,pic:'v_pour',ok:[_v('pour|pours|pouring')],sol:'pour'}]},
+ {render:'examtype',key:'c3',title:'Activity 3 — Complete the instruction',label:'4 · Activity 3: Complete the instruction',heading:'Activity 3 — Complete the instruction (9 marks)',layout:'list',
+  pre:'<p>Write the correct verb. Use each verb once.</p><div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:.9rem;"><strong>Word bank:</strong> stir · mix · add · pour · peel · cut · wash · grate · flip</div>',
+  items:[{inline:true,q:'<strong>1.</strong>',after:'the potatoes with a peeler.',ok:['^peel$'],sol:'Peel'},
+   {inline:true,q:'<strong>2.</strong>',after:'the cheese with a grater.',ok:['^grate$'],sol:'Grate'},
+   {inline:true,q:'<strong>3.</strong>',after:'the soup with a wooden spoon.',ok:['^stir$'],sol:'Stir'},
+   {inline:true,q:'<strong>4.</strong>',after:'the pancake with a spatula.',ok:['^flip$'],sol:'Flip'},
+   {inline:true,q:'<strong>5.</strong>',after:'the milk into the cup.',ok:['^pour$'],sol:'Pour'},
+   {inline:true,q:'<strong>6.</strong>',after:'the onion into small pieces.',ok:['^(cut|chop|dice|slice)$'],sol:'Cut'},
+   {inline:true,q:'<strong>7.</strong>',after:'the vegetables in cold water.',ok:['^(wash|rinse)$'],sol:'Wash'},
+   {inline:true,q:'<strong>8.</strong>',after:'the flour and the eggs in a bowl.',ok:['^mix$'],sol:'Mix'},
+   {inline:true,q:'<strong>9.</strong>',after:'a pinch of salt.',ok:['^add$'],sol:'Add'}]},
+ {render:'examtype',key:'c4',title:'Activity 4 — The right utensil',label:'5 · Activity 4: The right utensil',heading:'Activity 4 — The right utensil (4 marks)',layout:'list',
+  pre:'<p>Which utensil do we use? Write the name.</p><div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:.9rem;"><strong>Word bank:</strong> tongs · ladle · sieve · rolling pin</div>',
+  items:[{inline:true,q:'<strong>1.</strong> We use a',after:'to roll out the dough.',ok:[_u('rolling pin')],sol:'rolling pin'},
+   {inline:true,q:'<strong>2.</strong> We use a',after:'to serve the soup.',ok:[_u('ladle')],sol:'ladle'},
+   {inline:true,q:'<strong>3.</strong> We use',after:'to pick up hot bread.',ok:['^(a pair of |the )?tongs$'],sol:'tongs'},
+   {inline:true,q:'<strong>4.</strong> We use a',after:'to sift the flour.',ok:[_u('(sieve|strainer)')],sol:'sieve'}]},
+ {render:'examtype',key:'c5',title:'Activity 5 — Writing',label:'6 · Activity 5: Writing',heading:'Activity 5 — Writing (4 marks)',layout:'list',
+  pre:'<p>Write <strong>four</strong> instructions for a simple recipe (a salad, pancakes or soup). Use verbs and utensils from this exam. Example: <em>Peel the carrots with a peeler.</em></p>',
+  note:'The app checks that each sentence has at least 3 words and starts with a capital letter. Your teacher will check the grammar.',
+  items:[1,2,3,4].map(n=>({num:n,free:true}))},
+ {render:'examsummary',label:'7 · Results'}
+],'Exam finished. Well done!');
+(function(){const L=MODULES['kitchen-english'];let i=L.findIndex(m=>m.id==='k-ex2');if(i<0)i=L.length-1;L.splice(i+1,0,{id:'k-ex3',title:'Exam 3 — Utensils and Cooking Verbs',sub:'5 activities, 30 marks: tongs, spatula, ladle… stir, pour, peel, flip…',built:true});})();
+
 
 /* ---------------- KITCHEN & RESTAURANT: RESTAURANT SERVICE (Seconde Cuisine, full lesson) ---------------- */
 _L('k-m7','Kitchen & Restaurant English / Restaurant Service','🍽️','Restaurant Service — From Welcome to Bill','kitchen-english',[
