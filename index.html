@@ -6103,6 +6103,10 @@ Object.assign(EXIMG,{r_seat:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 .rs-fig.walk .rs-bob{animation:rsWalk .35s infinite;} .rs-fig.talk .rs-bob{animation:rsTalk .45s 4;} .rs-fig.shake .rs-bob{animation:rsShake .5s;}
 @keyframes rsWalk{50%{transform:translateY(-4px);}} @keyframes rsTalk{50%{transform:translateY(-3px);}} @keyframes rsShake{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
 .rs-me{position:absolute;top:8px;right:8px;width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;}
+.rs-menucard{background:#fffdf6;border:3px double #b98b5e;border-radius:12px;padding:10px;margin:8px 0;}
+.rs-mh{text-align:center;font-family:var(--serif);font-weight:700;font-size:1.05rem;color:#6b4a2f;margin-bottom:4px;}
+.rs-ms{font-weight:700;color:#b5651d;border-bottom:1px solid #e6d9c2;margin:8px 0 4px;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;}
+.rs-mg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;} .rs-d{text-align:center;font-size:.74rem;line-height:1.2;} .rs-d svg{width:100%;max-width:76px;height:auto;display:block;margin:0 auto 2px;}
 .rs-sub{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(20,30,50,.88);color:#fff;border-radius:10px;padding:6px 10px;font-size:.88rem;min-height:20px;}
 .rs-b{border-radius:14px;padding:8px 12px;margin:6px 0;max-width:88%;font-size:.92rem;}
 .rs-b.cust{background:var(--amber-soft);border:1px solid var(--amber);} .rs-b.you{background:#E6F2EF;border:1px solid var(--teal);margin-left:auto;}
@@ -6163,6 +6167,22 @@ const RS_P={
  close:{g:'Finish the service politely.',h:()=>'Thank you. Your food will be ready soon. Enjoy!',ok:t=>/enjoy|thank|welcome|pleasant|bon appetit|will be (ready|served)|coming|soon/.test(t),
   mv:R=>{R.wp='away';},say:()=>['Thank you very much! Goodbye.'],nx:()=>'end'}
 };
+const RS_PL='<ellipse cx="32" cy="42" rx="29" ry="15" fill="#fff" stroke="#d8d2c4" stroke-width="2"/>';
+const RS_ART={
+'vegetable soup':'<path d="M6 30 Q8 56 32 56 Q56 56 58 30Z" fill="#f4efe6" stroke="#c9bfae" stroke-width="2"/><ellipse cx="32" cy="30" rx="26" ry="8" fill="#e8873a"/><circle cx="22" cy="29" r="3" fill="#6aa84f"/><circle cx="34" cy="32" r="3" fill="#6aa84f"/><circle cx="44" cy="28" r="2.5" fill="#f6c244"/><path d="M24 20 Q20 14 24 8M36 20 Q32 14 36 8M46 20 Q42 14 46 8" stroke="#bbb" stroke-width="2" fill="none"/>',
+'green salad':'<path d="M6 30 Q8 56 32 56 Q56 56 58 30Z" fill="#f4efe6" stroke="#c9bfae" stroke-width="2"/><circle cx="20" cy="26" r="10" fill="#5fa84a"/><circle cx="34" cy="22" r="11" fill="#7cc25a"/><circle cx="46" cy="27" r="9" fill="#4f9a3f"/><circle cx="30" cy="31" r="5" fill="#d9472b"/><circle cx="42" cy="33" r="4" fill="#d9472b"/><circle cx="18" cy="35" r="4" fill="#cfe8a8"/>',
+'grilled chicken':RS_PL+'<ellipse cx="26" cy="36" rx="16" ry="12" fill="#b9692a" transform="rotate(-20 26 36)"/><path d="M36 28 L52 18" stroke="#f2e6cf" stroke-width="5" stroke-linecap="round"/><circle cx="54" cy="16" r="4" fill="#f2e6cf"/><path d="M16 32 L28 28M18 40 L32 34" stroke="#7a3f12" stroke-width="2"/>',
+'grilled fish':RS_PL+'<ellipse cx="30" cy="40" rx="20" ry="9" fill="#9fb4c2"/><path d="M48 40 L60 32 L60 48Z" fill="#8aa0ae"/><circle cx="19" cy="38" r="2" fill="#222"/><path d="M26 33 L24 47M34 33 L32 47M42 35 L40 45" stroke="#6f8696" stroke-width="2"/><circle cx="14" cy="52" r="6" fill="#f6d84a"/><path d="M14 46V58M8 52H20" stroke="#fff3a8" stroke-width="1"/>',
+'beef steak':RS_PL+'<path d="M12 40 Q10 28 26 26 Q44 22 52 32 Q58 44 40 50 Q18 54 12 40Z" fill="#8a3b1e"/><path d="M20 34L34 44M28 30L42 42M38 28L48 36" stroke="#4a1d0c" stroke-width="2.5"/><circle cx="46" cy="46" r="3" fill="#5fa84a"/>',
+'chocolate cake':'<path d="M6 54 L58 54 L58 30 L6 40Z" fill="#6b3a1f"/><path d="M6 40 L58 30 L58 36 L6 46Z" fill="#f3e2c0"/><path d="M6 30 L58 20 L58 30 L6 40Z" fill="#8a4b27"/><path d="M6 30 L58 20" stroke="#3d1e0c" stroke-width="3"/><circle cx="32" cy="22" r="5" fill="#c4262e"/><path d="M32 17 Q34 11 38 10" stroke="#3c7a2a" stroke-width="2" fill="none"/>',
+'fruit salad':'<path d="M6 30 Q8 56 32 56 Q56 56 58 30Z" fill="#f4efe6" stroke="#c9bfae" stroke-width="2"/><circle cx="18" cy="26" r="7" fill="#d9472b"/><circle cx="30" cy="22" r="7" fill="#f28c28"/><circle cx="42" cy="25" r="7" fill="#7cc25a"/><circle cx="50" cy="29" r="5" fill="#f6d84a"/><circle cx="26" cy="31" r="5" fill="#a64ca6"/>',
+'orange juice':'<path d="M18 16 L46 16 L42 56 L22 56Z" fill="#fff" stroke="#c9d6dd" stroke-width="2"/><path d="M19 24 L45 24 L42 56 L22 56Z" fill="#f59a1c"/><path d="M38 24 L44 6" stroke="#e24a4a" stroke-width="3"/><circle cx="46" cy="16" r="9" fill="#f59a1c" stroke="#fff" stroke-width="2"/><path d="M46 8V24M38 16H54" stroke="#fff" stroke-width="1.5"/>',
+'water':'<path d="M18 12 L46 12 L42 56 L22 56Z" fill="#e8f4fb" stroke="#a9c7d8" stroke-width="2"/><path d="M19 26 L45 26 L42 56 L22 56Z" fill="#8ec9ea"/><path d="M20 26 Q26 22 32 26 T44 26" stroke="#fff" stroke-width="2" fill="none"/>',
+'tea':'<ellipse cx="32" cy="52" rx="26" ry="6" fill="#e9e3d6" stroke="#c9bfae"/><path d="M12 28 L48 28 Q48 50 30 50 Q12 50 12 28Z" fill="#fff" stroke="#c9bfae" stroke-width="2"/><ellipse cx="30" cy="28" rx="18" ry="4" fill="#b5651d"/><path d="M48 32 Q58 32 54 42 Q52 46 46 44" stroke="#c9bfae" stroke-width="3" fill="none"/><path d="M24 20 Q20 14 24 8M36 20 Q32 14 36 8" stroke="#bbb" stroke-width="2" fill="none"/>',
+'coffee':'<ellipse cx="32" cy="52" rx="26" ry="6" fill="#e9e3d6" stroke="#c9bfae"/><path d="M12 28 L48 28 Q48 50 30 50 Q12 50 12 28Z" fill="#6b3f2a"/><ellipse cx="30" cy="28" rx="18" ry="4" fill="#3b2012"/><path d="M48 32 Q58 32 54 42 Q52 46 46 44" stroke="#6b3f2a" stroke-width="3" fill="none"/><path d="M24 20 Q20 14 24 8M36 20 Q32 14 36 8" stroke="#bbb" stroke-width="2" fill="none"/>'};
+function rsMenuHTML(){const sec=[['Starters',RS_M.start],['Main courses',RS_M.main],['Desserts',RS_M.des],['Drinks',RS_M.drink]];
+  return '<div class="rs-menucard"><div class="rs-mh">🍽 Our Restaurant · Menu</div>'+sec.map(s=>'<div class="rs-ms">'+s[0]+'</div><div class="rs-mg">'+s[1].map(d=>'<div class="rs-d"><svg viewBox="0 0 64 64">'+RS_ART[d.n]+'</svg><span>'+d.n+'</span></div>').join('')+'</div>').join('')+'</div>';}
+function rsMenuTog(){if(!RS)return;const auto=/^(ready|ready2|unav|more|else)$/.test(RS.ph);RS.menuOpen=!(RS.menuOpen===undefined?auto:RS.menuOpen);rsRender();}
 let RS=null;
 function rsStart(mode){const nm=rsPick(RS_NAMES),sc=rsPick(['sm','sm','sm','m','d','smd']),it={start:null,main:null,des:null,drink:null};
   if(/s/.test(sc))it.start=rsPick(RS_M.start);if(/m/.test(sc))it.main=rsPick(RS_M.main);if(/d/.test(sc))it.des=rsPick(RS_M.des);
@@ -6215,7 +6235,7 @@ function rsPanel(){const R=RS.R,n=RS.seq.length;
      +Object.keys(RS.pts).map(k=>'<div class="rs-goal">'+(RS.pts[k]===2?'✅':'💡')+' '+RS_P[k].g.toString().slice(0,0)+'<strong>'+k+'</strong>'+(RS.fails[k]?' · '+RS.fails[k]+' miss':'')+(RS.hint[k]?' · hint':'')+'</div>').join('')
      +'<div style="text-align:center;margin-top:10px;"><button class="check-btn" style="margin:0;" onclick="rsReset()">↻ New customer</button></div>';}
   const P=RS_P[RS.ph],g=typeof P.g==='function'?P.g(R):P.g,h=typeof P.h==='function'?P.h(R):P.h,done=Object.keys(RS.pts).length;
-  const menu=/menu|ready|ready2|unav|more|else/.test(RS.ph)?'<div class="rs-menu"><strong>Menu</strong> · Starters: soup, green salad · Mains: chicken, fish, steak · Desserts: chocolate cake, fruit salad · Drinks: orange juice, water, tea, coffee</div>':'';
+  const auto=/^(ready|ready2|unav|more|else)$/.test(RS.ph),open=RS.menuOpen===undefined?auto:RS.menuOpen,menu='<button class="quiz-opt" onclick="rsMenuTog()">📖 '+(open?'Hide':'Open')+' menu</button>'+(open?rsMenuHTML():'');
   const log=RS.log.slice(-4).map(m=>m.who==='cust'?'<div class="rs-b cust"><strong>'+R.title+' '+R.name+':</strong> '+exEsc(m.text)+'</div>':'<div class="rs-b you"><strong>You:</strong> '+exEsc(m.text)+'</div>').join('');
   return '<div class="rs-prog"><i style="width:'+Math.min(100,Math.round(done/9*100))+'%"></i></div>'+(RS.mode==='guided'?'<div class="rs-goal">🎯 '+g+'</div>':'<div class="rs-goal">🎯 Challenge mode: serve the customer correctly.</div>')+menu+log
    +'<button class="rs-mic '+(RS.listening?'on':'')+'" '+(RS.busy?'disabled':'')+' onclick="rsMic()" aria-label="Speak">🎤</button><div id="rsInterim" style="text-align:center;font-size:.86rem;color:var(--ink-soft);min-height:22px;">'+(RS.listening?'Listening… speak now':(RS.msg||(RS.busy?'…':'Tap the microphone and speak')))+'</div>'
